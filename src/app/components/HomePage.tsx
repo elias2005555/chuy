@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useOrders } from './OrderContext';
 import { ShoppingCart, ChefHat, Wifi, WifiOff } from 'lucide-react';
-import logoImg from 'figma:asset/2dd061b7efdafb8480bf69f0f13ce1543d82c799.png';
+import logoImg from '../../imports/image-1.png';
 
 const F = "'Inter', -apple-system, sans-serif";
 const MONO = "'JetBrains Mono', monospace";

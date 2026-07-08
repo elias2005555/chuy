@@ -3,7 +3,7 @@ import { useOrders, OrderItem, Order } from './OrderContext';
 import { MENU_ITEMS, CATEGORIES } from './menuData';
 import { ArrowLeft, ShoppingCart, Trash2, Send, X, Banknote, Plus, CheckCircle, Receipt, Droplets, User, Calculator } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import logoImg from 'figma:asset/2dd061b7efdafb8480bf69f0f13ce1543d82c799.png';
+import logoImg from '../../imports/image-1.png';
 
 const F    = "'Inter',-apple-system,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
