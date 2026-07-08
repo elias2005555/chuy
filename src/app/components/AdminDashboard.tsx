@@ -1,124 +1,84 @@
 import { useState, useMemo } from 'react';
 import { useOrders, Transaction } from './OrderContext';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Plus, Trash2, Download, X, BarChart3, Lock, RefreshCw, Calendar } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Plus, Trash2, Download, X, Lock, RefreshCw, BarChart3 } from 'lucide-react';
 import jsPDF from 'jspdf';
-import logoImg from '../../imports/image-1.png';
+import logoImg from 'figma:asset/2dd061b7efdafb8480bf69f0f13ce1543d82c799.png';
 
+const F    = "'Inter',-apple-system,sans-serif";
+const MONO = "'JetBrains Mono',monospace";
+const BG   = '#07090D';
+const CARD = '#0E1117';
+const CARD2= '#111620';
+const BORDER = '1px solid rgba(255,255,255,0.07)';
+const ORANGE = '#F97316';
 const ADMIN_PASS = '20052013';
 
-const S = {
-  screen: { minHeight:'100vh', backgroundColor:'#0A0A0A', fontFamily:'-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif', color:'#EAEAEA' },
-  card:   { backgroundColor:'#141414', borderRadius:16, border:'1px solid rgba(255,255,255,0.06)', padding:'18px 20px' },
-  label:  { fontSize:11, fontWeight:700, color:'#555', textTransform:'uppercase' as const, letterSpacing:1, marginBottom:6 },
-  input:  { width:'100%', padding:'11px 14px', borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', backgroundColor:'rgba(255,255,255,0.04)', color:'#FFF', fontSize:15, outline:'none', boxSizing:'border-box' as const },
-};
-
-// ── Password Gate ──────────────────────────────────────────────────────────────
-function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
-  const [pass, setPass] = useState('');
-  const [err, setErr]   = useState(false);
-  const navigate        = useNavigate();
-
-  const tryUnlock = () => {
-    if (pass === ADMIN_PASS) { onUnlock(); }
-    else { setErr(true); setPass(''); setTimeout(() => setErr(false), 2000); }
-  };
-
+function Label({ children }: { children: React.ReactNode }) {
+  return <p style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase' as const, letterSpacing:1.5, marginBottom:7, fontFamily:MONO }}>{children}</p>;
+}
+function IBtn({ onClick, children }: { onClick?:()=>void; children: React.ReactNode }) {
   return (
-    <div style={{ minHeight:'100vh', backgroundColor:'#0A0A0A', display:'flex', alignItems:'center', justifyContent:'center', padding:20, fontFamily:'-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif' }}>
-      <div style={{ width:'100%', maxWidth:360 }}>
-        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:28 }}>
-          <div style={{ padding:3, borderRadius:26, background:'linear-gradient(135deg,#FF6B35,#FFB347,#FF6B35)', boxShadow:'0 0 60px rgba(255,107,53,0.35)', marginBottom:18 }}>
-            <div style={{ width:180, height:125, borderRadius:24, overflow:'hidden', backgroundColor:'#111' }}>
-              <img src={logoImg} alt="Don de Chuy" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-            </div>
-          </div>
-          <div style={{ width:50, height:50, borderRadius:15, backgroundColor:'rgba(255,107,53,0.1)', border:'1px solid rgba(255,107,53,0.25)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12 }}>
-            <Lock style={{ width:22, height:22, color:'#FF6B35' }}/>
-          </div>
-          <h2 style={{ fontSize:22, fontWeight:900, color:'#FFF', marginBottom:4 }}>Administración</h2>
-          <p style={{ fontSize:13, color:'#555' }}>Ingresa la contraseña para continuar</p>
-        </div>
+    <button onClick={onClick} style={{ width:34, height:34, borderRadius:8, border:BORDER, backgroundColor:CARD2, cursor:'pointer', WebkitAppearance:'none', display:'flex', alignItems:'center', justifyContent:'center', color:'#6B7280' }}>
+      {children}
+    </button>
+  );
+}
 
-        <div style={{ backgroundColor:'#141414', borderRadius:20, border:`1px solid ${err ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.07)'}`, padding:'22px 20px', transition:'border-color 0.2s' }}>
-          <p style={{ fontSize:11, fontWeight:700, color:'#555', textTransform:'uppercase', letterSpacing:1, marginBottom:8 }}>Contraseña</p>
-          <input
-            type="password" value={pass}
-            onChange={e => setPass(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && tryUnlock()}
-            placeholder="••••••••" autoFocus
-            style={{ width:'100%', padding:'13px 16px', borderRadius:12, border:'1px solid rgba(255,255,255,0.08)', backgroundColor:'rgba(255,255,255,0.04)', color:'#FFF', fontSize:16, outline:'none', boxSizing:'border-box', marginBottom:err ? 8 : 14 }}
-          />
-          {err && <p style={{ fontSize:12, color:'#EF4444', fontWeight:700, marginBottom:10, textAlign:'center' }}>Contraseña incorrecta</p>}
-          <button onClick={tryUnlock} style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', backgroundColor:'#FF6B35', color:'#FFF', fontWeight:800, fontSize:15, cursor:'pointer', WebkitAppearance:'none' }}>
-            Entrar
-          </button>
-        </div>
-
-        <button onClick={() => navigate('/')} style={{ display:'flex', alignItems:'center', gap:6, margin:'18px auto 0', color:'#555', fontSize:13, fontWeight:600, background:'none', border:'none', cursor:'pointer', WebkitAppearance:'none' }}>
-          <ArrowLeft style={{ width:14, height:14 }}/> Regresar
-        </button>
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+function Stat({ label, value, icon, color, sub }: { label:string; value:string; icon:React.ReactNode; color:string; sub?:string }) {
+  return (
+    <div style={{ backgroundColor:CARD, border:BORDER, borderRadius:12, padding:'16px 18px', position:'relative', overflow:'hidden' }}>
+      <div style={{ position:'absolute', top:0, right:0, width:60, height:60, borderRadius:'0 12px 0 60px', backgroundColor:`${color}08` }}/>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+        <span style={{ fontSize:10, fontWeight:700, color:'#4B5563', textTransform:'uppercase', letterSpacing:1.5, fontFamily:MONO }}>{label}</span>
+        <div style={{ color }}>{icon}</div>
       </div>
+      <p style={{ fontSize:22, fontWeight:800, color:'#EDF0F4', fontFamily:MONO, lineHeight:1 }}>{value}</p>
+      {sub && <p style={{ fontSize:10, color:'#374151', marginTop:5, fontFamily:F }}>{sub}</p>}
     </div>
   );
 }
 
-// ── Add Transaction Modal ──────────────────────────────────────────────────────
-function AddTxModal({ onAdd, onClose }: {
-  onAdd: (tx: { amount: number; type: Transaction['type']; description: string }) => void;
-  onClose: () => void;
-}) {
-  const [amount, setAmount] = useState('');
-  const [type, setType]     = useState<Transaction['type']>('expense');
-  const [desc, setDesc]     = useState('');
+// ─── Add Tx Modal ─────────────────────────────────────────────────────────────
+function AddTxModal({ onAdd, onClose }: { onAdd:(tx:{amount:number;type:Transaction['type'];description:string})=>void; onClose:()=>void }) {
+  const [amount,setAmount] = useState('');
+  const [type,setType]     = useState<Transaction['type']>('expense');
+  const [desc,setDesc]     = useState('');
 
-  const TYPES: { value: Transaction['type']; label: string; color: string; emoji: string }[] = [
-    { value:'expense',      label:'Gasto',         color:'#EF4444', emoji:'💸' },
-    { value:'other-income', label:'Otro ingreso',   color:'#22C55E', emoji:'💰' },
-    { value:'card-close',   label:'Cierre tarjeta', color:'#3B82F6', emoji:'💳' },
+  const TYPES = [
+    { value:'expense'      as Transaction['type'], label:'Gasto',         color:'#EF4444', emoji:'💸' },
+    { value:'other-income' as Transaction['type'], label:'Otro ingreso',  color:'#22C55E', emoji:'💰' },
+    { value:'card-close'   as Transaction['type'], label:'Cierre tarjeta',color:'#3B82F6', emoji:'💳' },
   ];
 
-  const submit = () => {
-    const a = parseFloat(amount);
-    if (!a || a <= 0 || !desc.trim()) return;
-    onAdd({ amount: a, type, description: desc.trim() });
-    onClose();
-  };
+  const inp = { width:'100%', padding:'11px 13px', borderRadius:9, border:BORDER, backgroundColor:CARD2, color:'#EDF0F4', fontSize:14, outline:'none', boxSizing:'border-box' as const, fontFamily:F };
 
   return (
-    <div style={{ position:'fixed', inset:0, backgroundColor:'rgba(0,0,0,0.85)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200, padding:16 }}>
-      <div style={{ width:'100%', maxWidth:400, backgroundColor:'#141414', borderRadius:20, border:'1px solid rgba(255,255,255,0.08)', overflow:'hidden' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-          <span style={{ fontWeight:800, fontSize:17, color:'#FFF' }}>Nueva transacción</span>
-          <button onClick={onClose} style={{ width:34, height:34, borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', backgroundColor:'rgba(255,255,255,0.04)', cursor:'pointer', color:'#666', display:'flex', alignItems:'center', justifyContent:'center', WebkitAppearance:'none' }}>
-            <X style={{ width:15, height:15 }}/>
-          </button>
+    <div style={{ position:'fixed', inset:0, backgroundColor:'rgba(0,0,0,0.85)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:300, padding:16 }}>
+      <div style={{ width:'100%', maxWidth:380, backgroundColor:CARD, borderRadius:16, border:BORDER, overflow:'hidden' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', borderBottom:BORDER }}>
+          <span style={{ fontWeight:700, fontSize:15, color:'#EDF0F4', fontFamily:F }}>Nueva transacción</span>
+          <IBtn onClick={onClose}><X style={{ width:14, height:14 }}/></IBtn>
         </div>
-        <div style={{ padding:20, display:'flex', flexDirection:'column', gap:14 }}>
+        <div style={{ padding:'16px', display:'flex', flexDirection:'column', gap:13 }}>
           <div>
-            <p style={{ fontSize:11, fontWeight:700, color:'#555', textTransform:'uppercase', letterSpacing:1, marginBottom:8 }}>Tipo</p>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
-              {TYPES.map(t => (
-                <button key={t.value} onClick={() => setType(t.value)} style={{ padding:'10px 6px', borderRadius:12, border:`1px solid ${type===t.value ? t.color+'60' : 'rgba(255,255,255,0.06)'}`, backgroundColor: type===t.value ? t.color+'15' : 'rgba(255,255,255,0.03)', color: type===t.value ? t.color : '#555', fontWeight:700, fontSize:11, cursor:'pointer', WebkitAppearance:'none', textAlign:'center' }}>
+            <Label>Tipo</Label>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:7 }}>
+              {TYPES.map(t=>(
+                <button key={t.value} onClick={()=>setType(t.value)} style={{ padding:'10px 6px', borderRadius:10, border:`1px solid ${type===t.value?t.color+'40':'rgba(255,255,255,0.07)'}`, backgroundColor:type===t.value?`${t.color}12`:'rgba(255,255,255,0.02)', color:type===t.value?t.color:'#6B7280', fontWeight:700, fontSize:10, cursor:'pointer', WebkitAppearance:'none', textAlign:'center', fontFamily:F }}>
                   <div style={{ fontSize:18, marginBottom:3 }}>{t.emoji}</div>
                   {t.label}
                 </button>
               ))}
             </div>
           </div>
-          <div>
-            <p style={{ fontSize:11, fontWeight:700, color:'#555', textTransform:'uppercase', letterSpacing:1, marginBottom:8 }}>Monto (L.)</p>
-            <input type="number" inputMode="decimal" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00"
-              style={{ width:'100%', padding:'12px 14px', borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', backgroundColor:'rgba(255,255,255,0.04)', color:'#FFF', fontSize:22, fontWeight:900, outline:'none', boxSizing:'border-box', textAlign:'center' }}/>
-          </div>
-          <div>
-            <p style={{ fontSize:11, fontWeight:700, color:'#555', textTransform:'uppercase', letterSpacing:1, marginBottom:8 }}>Descripción</p>
-            <input type="text" value={desc} onChange={e => setDesc(e.target.value)} placeholder="Ej: Compra de ingredientes"
-              style={{ width:'100%', padding:'12px 14px', borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', backgroundColor:'rgba(255,255,255,0.04)', color:'#FFF', fontSize:14, outline:'none', boxSizing:'border-box' }}/>
-          </div>
-          <button onClick={submit} disabled={!amount || !desc.trim()} style={{ width:'100%', padding:'14px', borderRadius:12, border:'none', backgroundColor: amount && desc.trim() ? '#FF6B35' : 'rgba(255,107,53,0.15)', color: amount && desc.trim() ? '#FFF' : '#444', fontWeight:800, fontSize:15, cursor: amount && desc.trim() ? 'pointer' : 'not-allowed', WebkitAppearance:'none' }}>
-            Agregar transacción
+          <div><Label>Monto (L.)</Label><input type="number" inputMode="decimal" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00" style={{ ...inp, fontSize:18, fontFamily:MONO }}/></div>
+          <div><Label>Descripción</Label><input type="text" value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Ej: Compra de gas" style={inp}/></div>
+          <button
+            onClick={()=>{ const a=parseFloat(amount); if(a>0&&desc.trim()){onAdd({amount:a,type,description:desc.trim()});onClose();} }}
+            style={{ width:'100%', padding:'13px', borderRadius:10, border:'none', backgroundColor:ORANGE, color:'#FFF', fontWeight:700, fontSize:14, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>
+            Registrar
           </button>
         </div>
       </div>
@@ -126,293 +86,259 @@ function AddTxModal({ onAdd, onClose }: {
   );
 }
 
-// ── Stat Card ──────────────────────────────────────────────────────────────────
-function StatCard({ label, value, sub, color, icon: Icon }: { label:string; value:string; sub?:string; color:string; icon:any }) {
+// ─── Password Gate ────────────────────────────────────────────────────────────
+function PasswordGate({ onUnlock }: { onUnlock:()=>void }) {
+  const [pass,setPass] = useState('');
+  const [err,setErr]   = useState(false);
+  const navigate = useNavigate();
+
+  const tryUnlock = () => {
+    if (pass===ADMIN_PASS) { onUnlock(); }
+    else { setErr(true); setPass(''); setTimeout(()=>setErr(false),2000); }
+  };
+
   return (
-    <div style={{ backgroundColor:'#141414', borderRadius:16, border:'1px solid rgba(255,255,255,0.06)', padding:'16px 18px' }}>
-      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:10 }}>
-        <p style={{ fontSize:11, fontWeight:700, color:'#555', textTransform:'uppercase', letterSpacing:1 }}>{label}</p>
-        <div style={{ width:32, height:32, borderRadius:10, backgroundColor:`${color}15`, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <Icon style={{ width:15, height:15, color }}/>
+    <div style={{ minHeight:'100vh', backgroundColor:BG, display:'flex', alignItems:'center', justifyContent:'center', padding:20, fontFamily:F, position:'relative', overflow:'hidden' }}>
+      <div style={{ position:'absolute', inset:0, pointerEvents:'none', backgroundImage:'linear-gradient(rgba(249,115,22,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(249,115,22,0.03) 1px,transparent 1px)', backgroundSize:'44px 44px' }}/>
+      <div style={{ width:'100%', maxWidth:340, position:'relative' }}>
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:28 }}>
+          <div style={{ padding:2, borderRadius:22, background:'linear-gradient(135deg,#F97316,#FBBF24,#F97316)', boxShadow:'0 0 50px rgba(249,115,22,0.2)', marginBottom:16 }}>
+            <div style={{ width:80, height:80, borderRadius:20, backgroundColor:'#FFF', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden' }}>
+              <img src={logoImg} alt="Don de Chuy" style={{ width:'84%', height:'84%', objectFit:'contain' }}/>
+            </div>
+          </div>
+          <div style={{ width:42, height:42, borderRadius:12, backgroundColor:'rgba(249,115,22,0.08)', border:'1px solid rgba(249,115,22,0.2)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:12 }}>
+            <Lock style={{ width:18, height:18, color:ORANGE }}/>
+          </div>
+          <h2 style={{ fontSize:20, fontWeight:900, color:'#EDF0F4', marginBottom:3 }}>Administración</h2>
+          <p style={{ fontSize:11, color:'#4B5563', fontFamily:MONO, letterSpacing:1 }}>ACCESO RESTRINGIDO</p>
         </div>
+
+        <div style={{ backgroundColor:CARD, borderRadius:14, border:`1px solid ${err?'rgba(239,68,68,0.35)':BORDER.split('solid')[1]}`, padding:'22px 20px', transition:'border-color 0.2s' }}>
+          <Label>Contraseña</Label>
+          <input type="password" value={pass} onChange={e=>setPass(e.target.value)} onKeyDown={e=>e.key==='Enter'&&tryUnlock()}
+            placeholder="••••••••" autoFocus
+            style={{ width:'100%', padding:'12px 15px', borderRadius:10, border:`1px solid ${err?'rgba(239,68,68,0.4)':'rgba(255,255,255,0.07)'}`, backgroundColor:CARD2, color:'#EDF0F4', fontSize:15, outline:'none', boxSizing:'border-box', marginBottom:err?8:14, fontFamily:F, transition:'border-color 0.2s' }}/>
+          {err && <p style={{ fontSize:12, color:'#EF4444', fontWeight:600, marginBottom:12, textAlign:'center', fontFamily:F }}>Contraseña incorrecta</p>}
+          <button onClick={tryUnlock} style={{ width:'100%', padding:'13px', borderRadius:10, border:'none', backgroundColor:ORANGE, color:'#FFF', fontWeight:800, fontSize:14, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>
+            Entrar
+          </button>
+        </div>
+
+        <button onClick={()=>navigate('/')} style={{ display:'flex', alignItems:'center', gap:6, margin:'16px auto 0', color:'#374151', fontSize:12, fontWeight:600, background:'none', border:'none', cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>
+          <ArrowLeft style={{ width:13, height:13 }}/> Regresar
+        </button>
       </div>
-      <p style={{ fontSize:26, fontWeight:900, color, lineHeight:1 }}>{value}</p>
-      {sub && <p style={{ fontSize:11, color:'#444', marginTop:5 }}>{sub}</p>}
     </div>
   );
 }
 
-// ── Transaction Row ────────────────────────────────────────────────────────────
-function TxRow({ tx, onDelete, typeColor, typeLabel }: {
-  tx: Transaction; onDelete: (id:string) => void;
-  typeColor: Record<string,string>; typeLabel: Record<string,string>;
-}) {
-  return (
-    <div style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', backgroundColor:'rgba(255,255,255,0.02)', borderRadius:10, border:'1px solid rgba(255,255,255,0.03)' }}>
-      <div style={{ width:8, height:8, borderRadius:'50%', backgroundColor: typeColor[tx.type]||'#666', flexShrink:0 }}/>
-      <div style={{ flex:1, minWidth:0 }}>
-        <p style={{ fontSize:13, fontWeight:600, color:'#EAEAEA', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{tx.description}</p>
-        <p style={{ fontSize:11, color:'#444', marginTop:1 }}>
-          {typeLabel[tx.type]||tx.type} · {new Date(tx.timestamp).toLocaleDateString('es-HN')} {new Date(tx.timestamp).toLocaleTimeString('es-HN',{hour:'2-digit',minute:'2-digit'})}
-        </p>
-      </div>
-      <span style={{ fontSize:13, fontWeight:800, color: typeColor[tx.type]||'#FFF', flexShrink:0 }}>
-        {tx.type==='expense'?'-':'+'}L.{tx.amount.toFixed(2)}
-      </span>
-      <button onClick={() => onDelete(tx.id)} style={{ width:30, height:30, borderRadius:8, border:'1px solid rgba(239,68,68,0.2)', backgroundColor:'rgba(239,68,68,0.08)', color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', WebkitAppearance:'none', flexShrink:0 }}>
-        <Trash2 style={{ width:13, height:13 }}/>
-      </button>
-    </div>
-  );
-}
-
-// ── Main Dashboard ─────────────────────────────────────────────────────────────
+// ─── Main Admin ───────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const {
-    transactions, deleteTransaction, addTransaction,
-    getTotalSales, getTotalExpenses, getOtherIncome, getNetProfit,
-    buildDailySummary, closeDayAndClean, orders,
-  } = useOrders();
+  const { transactions, deleteTransaction, addTransaction, getTotalSales, getTotalExpenses, getOtherIncome, getNetProfit, buildDailySummary, closeDayAndClean, orders } = useOrders();
 
-  const [unlocked, setUnlocked] = useState(false);
-  const [showAdd, setShowAdd]   = useState(false);
-  const [tab, setTab]           = useState<'overview'|'transactions'|'close'>('overview');
-  const [closing, setClosing]   = useState(false);
-  const [closeMsg, setCloseMsg] = useState('');
+  const [unlocked,setUnlocked]   = useState(false);
+  const [tab,setTab]             = useState<'overview'|'transactions'|'close'>('overview');
+  const [showAddTx,setShowAddTx] = useState(false);
+  const [closeDate,setCloseDate] = useState(new Date().toISOString().slice(0,10));
+  const [closing,setClosing]     = useState(false);
+  const [closed,setClosed]       = useState(false);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0,10);
+  const todayTx = useMemo(()=>transactions.filter(t=>t.timestamp.startsWith(today)),[transactions,today]);
 
-  const todaySales    = useMemo(() => transactions.filter(t=>t.timestamp.startsWith(today)&&t.type==='sale').reduce((s,t)=>s+t.amount,0), [transactions,today]);
-  const todayExpenses = useMemo(() => transactions.filter(t=>t.timestamp.startsWith(today)&&t.type==='expense').reduce((s,t)=>s+t.amount,0), [transactions,today]);
-  const todayOther    = useMemo(() => transactions.filter(t=>t.timestamp.startsWith(today)&&(t.type==='other-income'||t.type==='card-close')).reduce((s,t)=>s+t.amount,0), [transactions,today]);
-  const todayNet      = todaySales + todayOther - todayExpenses;
-  const todayTx       = useMemo(() => [...transactions].filter(t=>t.timestamp.startsWith(today)).sort((a,b)=>b.timestamp.localeCompare(a.timestamp)), [transactions,today]);
+  const summary = useMemo(()=>buildDailySummary(today),[transactions,today]);
 
-  const typeColor: Record<string,string> = { sale:'#22C55E', expense:'#EF4444', 'other-income':'#3B82F6', 'card-close':'#8B5CF6', 'drink-log':'#F59E0B' };
-  const typeLabel: Record<string,string> = { sale:'Venta', expense:'Gasto', 'other-income':'Ingreso extra', 'card-close':'Cierre tarjeta', 'drink-log':'Bebida directa' };
-
-  const downloadPDF = (date = today) => {
-    const s = buildDailySummary(date);
+  const downloadPDF = () => {
     const doc = new jsPDF();
-    let y = 18;
-    doc.setFontSize(20); doc.setFont('helvetica','bold');
-    doc.text('Don de Chuy Business — Resumen Diario', 15, y); y += 10;
-    doc.setFontSize(11); doc.setFont('helvetica','normal');
-    doc.text(`Fecha: ${date}   Generado: ${new Date().toLocaleString('es-HN')}`, 15, y); y += 14;
-    doc.setFillColor(245,245,245); doc.rect(15,y,180,34,'F'); y += 6;
-    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('RESUMEN FINANCIERO', 20, y); y += 7;
-    doc.setFontSize(11); doc.setFont('helvetica','normal');
-    doc.text(`Ventas: L.${s.totalSales.toFixed(2)}   Gastos: L.${s.totalExpenses.toFixed(2)}`, 20, y); y += 6;
-    doc.text(`Otros ingresos: L.${s.otherIncome.toFixed(2)}   Utilidad neta: L.${s.netProfit.toFixed(2)}`, 20, y); y += 14;
-    if (s.itemsSold.length > 0) {
-      doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('Artículos Vendidos', 15, y); y += 8;
-      doc.setFontSize(9); doc.setFont('helvetica','normal');
-      s.itemsSold.forEach(item => { doc.text(`  ${item.name}  ·  ${item.qty} uds  ·  L.${item.total.toFixed(2)}`, 15, y); y += 5; if(y>270){doc.addPage();y=20;} });
-      y += 4;
-    }
-    doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.text('Transacciones', 15, y); y += 8;
-    doc.setFontSize(9); doc.setFont('helvetica','normal');
-    s.transactions.sort((a,b)=>a.timestamp.localeCompare(b.timestamp)).forEach(tx => {
-      const time = new Date(tx.timestamp).toLocaleTimeString('es-HN',{hour:'2-digit',minute:'2-digit'});
-      doc.text(`  [${time}]  ${typeLabel[tx.type]||tx.type}  ·  ${tx.description}  ·  ${tx.type==='expense'?'-':'+'}L.${tx.amount.toFixed(2)}`, 15, y);
-      y += 5; if(y>275){doc.addPage();y=20;}
+    const s = buildDailySummary(today);
+    doc.setFontSize(18); doc.text('Don de Chuy Business', 20, 20);
+    doc.setFontSize(12); doc.text(`Resumen del día: ${today}`, 20, 32);
+    doc.setFontSize(10);
+    doc.text(`Ventas totales:  L.${s.totalSales.toFixed(2)}`, 20, 48);
+    doc.text(`Gastos:          L.${s.totalExpenses.toFixed(2)}`, 20, 56);
+    doc.text(`Otros ingresos:  L.${s.otherIncome.toFixed(2)}`, 20, 64);
+    doc.text(`Ganancia neta:   L.${s.netProfit.toFixed(2)}`, 20, 72);
+    doc.setFontSize(11); doc.text('Transacciones:', 20, 88);
+    doc.setFontSize(9);
+    s.transactions.forEach((t,i)=>{
+      const y = 96 + i*8;
+      const sign = t.type==='expense'?'-':'+';
+      doc.text(`${sign}L.${t.amount.toFixed(2)}  ${t.description}  ${t.timestamp.slice(11,16)}`, 20, y);
     });
-    doc.save(`don-de-chuy-${date}.pdf`);
+    doc.save(`ddc-resumen-${today}.pdf`);
   };
 
-  const handleCloseDay = async () => {
-    if (!window.confirm(`¿Cerrar el día ${today}? Se descargará el PDF y se borrarán los pedidos de hoy.`)) return;
+  const doClose = async () => {
+    if (!closeDate) return;
     setClosing(true);
-    downloadPDF(today);
-    await closeDayAndClean(today);
-    setClosing(false);
-    setCloseMsg(`Día ${today} cerrado exitosamente.`);
+    await closeDayAndClean(closeDate);
+    setClosing(false); setClosed(true);
+    setTimeout(()=>setClosed(false),3000);
   };
 
-  if (!unlocked) return <PasswordGate onUnlock={() => setUnlocked(true)}/>;
+  const TX_COLORS: Record<string,string> = { sale:'#22C55E', expense:'#EF4444', 'other-income':'#3B82F6', 'card-close':'#8B5CF6', 'drink-log':'#60A5FA' };
+  const TX_LABELS: Record<string,string> = { sale:'Venta', expense:'Gasto', 'other-income':'Otro ingreso', 'card-close':'Tarjeta', 'drink-log':'Bebida' };
 
-  const TABS = [
-    { key:'overview' as const,     label:'Resumen hoy' },
-    { key:'transactions' as const, label:'Transacciones' },
-    { key:'close' as const,        label:'Cierre del día' },
-  ];
+  if (!unlocked) return <PasswordGate onUnlock={()=>setUnlocked(true)}/>;
+
+  const activeOrders = orders.filter(o=>o.status!=='delivered').length;
 
   return (
-    <div style={{ minHeight:'100vh', backgroundColor:'#0A0A0A', fontFamily:'-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif', color:'#EAEAEA' }}>
-      {showAdd && <AddTxModal onAdd={addTransaction} onClose={() => setShowAdd(false)}/>}
+    <div style={{ minHeight:'100vh', backgroundColor:BG, fontFamily:F, color:'#EDF0F4' }}>
+      {showAddTx && <AddTxModal onAdd={tx=>addTransaction(tx)} onClose={()=>setShowAddTx(false)}/>}
 
       {/* Header */}
-      <header style={{ backgroundColor:'#141414', borderBottom:'1px solid rgba(255,255,255,0.06)', padding:'11px 16px', display:'flex', alignItems:'center', justifyContent:'space-between', position:'sticky', top:0, zIndex:10 }}>
+      <header style={{ backgroundColor:CARD, borderBottom:BORDER, padding:'12px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', position:'sticky', top:0, zIndex:10 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <button onClick={() => navigate('/')} style={{ width:36, height:36, borderRadius:10, backgroundColor:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', color:'#888', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', WebkitAppearance:'none' }}>
-            <ArrowLeft style={{ width:16, height:16 }}/>
-          </button>
-          <div style={{ width:52, height:36, borderRadius:9, overflow:'hidden', border:'1px solid rgba(255,107,53,0.3)' }}>
-            <img src={logoImg} alt="Don de Chuy" style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+          <IBtn onClick={()=>navigate('/')}><ArrowLeft style={{ width:14, height:14 }}/></IBtn>
+          <div style={{ width:32, height:32, borderRadius:8, backgroundColor:'#FFF', overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <img src={logoImg} alt="" style={{ width:'82%', height:'82%', objectFit:'contain' }}/>
           </div>
           <div>
-            <p style={{ fontWeight:900, fontSize:15, color:'#FFF', lineHeight:1 }}>Administración</p>
-            <p style={{ fontSize:11, color:'#555', marginTop:2 }}>Don de Chuy Business</p>
+            <p style={{ fontWeight:800, fontSize:14, color:'#EDF0F4', lineHeight:1 }}>Administración</p>
+            <p style={{ fontSize:10, color:'#374151', marginTop:1, fontFamily:MONO, letterSpacing:0.5 }}>Don de Chuy Business</p>
           </div>
         </div>
-        <div style={{ display:'flex', gap:8 }}>
-          <button onClick={() => downloadPDF(today)} style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 12px', borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', backgroundColor:'rgba(255,255,255,0.04)', color:'#888', fontWeight:700, fontSize:13, cursor:'pointer', WebkitAppearance:'none' }}>
-            <Download style={{ width:13, height:13 }}/> PDF
-          </button>
-          <button onClick={() => setShowAdd(true)} style={{ display:'flex', alignItems:'center', gap:5, padding:'8px 12px', borderRadius:10, border:'none', backgroundColor:'#FF6B35', color:'#FFF', fontWeight:700, fontSize:13, cursor:'pointer', WebkitAppearance:'none' }}>
-            <Plus style={{ width:13, height:13 }}/> Agregar
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          {activeOrders>0&&<span style={{ fontSize:11, fontWeight:700, color:'#F97316', fontFamily:MONO }}>{activeOrders} activo{activeOrders!==1?'s':''}</span>}
+          <IBtn onClick={downloadPDF}><Download style={{ width:14, height:14 }}/></IBtn>
+          <button onClick={()=>setShowAddTx(true)} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 13px', borderRadius:9, border:'none', backgroundColor:ORANGE, color:'#FFF', fontWeight:700, fontSize:12, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>
+            <Plus style={{ width:13, height:13 }}/> Registrar
           </button>
         </div>
       </header>
 
       {/* Tabs */}
-      <div style={{ display:'flex', gap:2, padding:'12px 16px 0', borderBottom:'1px solid rgba(255,255,255,0.06)', overflowX:'auto' }}>
-        {TABS.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)} style={{
-            padding:'9px 16px', borderRadius:'10px 10px 0 0', border:'none',
-            backgroundColor: tab===t.key ? '#1A1A1A' : 'transparent',
-            color: tab===t.key ? '#FFF' : '#555', fontWeight:700, fontSize:13, cursor:'pointer', WebkitAppearance:'none',
-            borderBottom: tab===t.key ? '2px solid #FF6B35' : '2px solid transparent', whiteSpace:'nowrap',
-          }}>
-            {t.label}
-          </button>
-        ))}
+      <div style={{ padding:'16px 20px 0' }}>
+        <div style={{ display:'flex', gap:2, backgroundColor:CARD, borderRadius:10, padding:3, border:BORDER, width:'fit-content' }}>
+          {(['overview','transactions','close'] as const).map(t=>(
+            <button key={t} onClick={()=>setTab(t)} style={{ padding:'8px 16px', borderRadius:8, border:'none', backgroundColor:tab===t?'rgba(249,115,22,0.15)':'transparent', color:tab===t?ORANGE:'#6B7280', fontWeight:700, fontSize:12, cursor:'pointer', WebkitAppearance:'none', fontFamily:F, transition:'all 0.15s', borderBottom:tab===t?`2px solid ${ORANGE}`:'2px solid transparent' }}>
+              {t==='overview'?'Resumen hoy':t==='transactions'?'Transacciones':'Cierre del día'}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div style={{ padding:'18px 16px', maxWidth:960, margin:'0 auto', width:'100%', boxSizing:'border-box' }}>
+      <div style={{ padding:'20px', maxWidth:900 }}>
 
-        {/* ── Overview tab ── */}
-        {tab === 'overview' && (
-          <>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))', gap:11, marginBottom:18 }}>
-              <StatCard label="Ventas hoy"     value={`L.${todaySales.toFixed(2)}`}    sub={`${todayTx.filter(t=>t.type==='sale').length} operaciones`}  color="#22C55E" icon={TrendingUp}/>
-              <StatCard label="Gastos hoy"     value={`L.${todayExpenses.toFixed(2)}`} sub={`${todayTx.filter(t=>t.type==='expense').length} gastos`}     color="#EF4444" icon={TrendingDown}/>
-              <StatCard label="Otros ingresos" value={`L.${todayOther.toFixed(2)}`}    sub="Tarjeta + extras"                                              color="#3B82F6" icon={BarChart3}/>
-              <StatCard label="Utilidad neta"  value={`L.${todayNet.toFixed(2)}`}      sub="Ventas + Otros − Gastos"                                       color={todayNet>=0?'#22C55E':'#EF4444'} icon={DollarSign}/>
+        {/* ── OVERVIEW ── */}
+        {tab==='overview' && (
+          <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+            {/* Stats grid */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:10 }}>
+              <Stat label="Ventas del día" value={`L.${summary.totalSales.toFixed(2)}`} color="#22C55E" icon={<TrendingUp style={{ width:16,height:16 }}/>} sub={`${todayTx.filter(t=>t.type==='sale'||t.type==='drink-log').length} transacciones`}/>
+              <Stat label="Gastos" value={`L.${summary.totalExpenses.toFixed(2)}`} color="#EF4444" icon={<TrendingDown style={{ width:16,height:16 }}/>}/>
+              <Stat label="Otros ingresos" value={`L.${summary.otherIncome.toFixed(2)}`} color="#3B82F6" icon={<BarChart3 style={{ width:16,height:16 }}/>}/>
+              <Stat label="Ganancia neta" value={`L.${summary.netProfit.toFixed(2)}`} color={summary.netProfit>=0?"#22C55E":"#EF4444"} icon={<DollarSign style={{ width:16,height:16 }}/>} sub="Ventas + ingresos − gastos"/>
             </div>
 
-            {/* Global totals */}
-            <div style={{ backgroundColor:'#141414', borderRadius:16, border:'1px solid rgba(255,255,255,0.06)', padding:'16px 18px', marginBottom:16 }}>
-              <p style={{ fontWeight:800, fontSize:13, color:'#FFF', marginBottom:12 }}>Totales generales</p>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))', gap:9 }}>
-                {[
-                  { l:'Total ventas',   v:`L.${getTotalSales().toFixed(2)}`,    c:'#22C55E' },
-                  { l:'Total gastos',   v:`L.${getTotalExpenses().toFixed(2)}`, c:'#EF4444' },
-                  { l:'Otros ingresos', v:`L.${getOtherIncome().toFixed(2)}`,   c:'#3B82F6' },
-                  { l:'Utilidad total', v:`L.${getNetProfit().toFixed(2)}`,     c: getNetProfit()>=0?'#22C55E':'#EF4444' },
-                ].map(s => (
-                  <div key={s.l} style={{ backgroundColor:'rgba(255,255,255,0.03)', borderRadius:11, padding:'11px 13px', border:'1px solid rgba(255,255,255,0.04)' }}>
-                    <p style={{ fontSize:11, color:'#444', marginBottom:4 }}>{s.l}</p>
-                    <p style={{ fontSize:19, fontWeight:900, color:s.c }}>{s.v}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Today activity */}
-            <div style={{ backgroundColor:'#141414', borderRadius:16, border:'1px solid rgba(255,255,255,0.06)', padding:'16px 18px' }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-                <p style={{ fontWeight:800, fontSize:13, color:'#FFF' }}>Actividad de hoy · {today}</p>
-                <span style={{ fontSize:11, color:'#444' }}>{todayTx.length} movimientos</span>
-              </div>
-              {todayTx.length === 0
-                ? <p style={{ color:'#333', fontSize:13, textAlign:'center', padding:'20px 0' }}>Sin actividad hoy</p>
-                : <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                    {todayTx.slice(0,20).map(tx => <TxRow key={tx.id} tx={tx} typeColor={typeColor} typeLabel={typeLabel} onDelete={deleteTransaction}/>)}
-                    {todayTx.length > 20 && <p style={{ color:'#444', fontSize:12, textAlign:'center', paddingTop:8 }}>+{todayTx.length-20} más en "Transacciones"</p>}
-                  </div>
-              }
-            </div>
-          </>
-        )}
-
-        {/* ── Transactions tab ── */}
-        {tab === 'transactions' && (
-          <div style={{ backgroundColor:'#141414', borderRadius:16, border:'1px solid rgba(255,255,255,0.06)', padding:'16px 18px' }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-              <p style={{ fontWeight:800, fontSize:14, color:'#FFF' }}>Todas las transacciones</p>
-              <span style={{ fontSize:12, color:'#444', fontWeight:600 }}>{transactions.length} total</span>
-            </div>
-            {transactions.length === 0
-              ? <p style={{ color:'#333', fontSize:13, textAlign:'center', padding:'28px 0' }}>Sin transacciones registradas</p>
-              : <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                  {[...transactions].sort((a,b)=>b.timestamp.localeCompare(a.timestamp)).map(tx => (
-                    <TxRow key={tx.id} tx={tx} typeColor={typeColor} typeLabel={typeLabel} onDelete={deleteTransaction}/>
+            {/* Top items */}
+            {summary.itemsSold.length>0 && (
+              <div style={{ backgroundColor:CARD, borderRadius:12, border:BORDER, padding:'16px 18px' }}>
+                <p style={{ fontWeight:700, fontSize:13, color:'#EDF0F4', marginBottom:12, fontFamily:F }}>Productos vendidos hoy</p>
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {summary.itemsSold.slice(0,10).map(it=>(
+                    <div key={it.name} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'7px 10px', backgroundColor:CARD2, borderRadius:8 }}>
+                      <span style={{ fontSize:12, color:'#9AA3B0', fontFamily:F }}>{it.qty}× {it.name}</span>
+                      <span style={{ fontSize:12, fontWeight:700, color:ORANGE, fontFamily:MONO }}>L.{it.total.toFixed(2)}</span>
+                    </div>
                   ))}
                 </div>
-            }
-          </div>
-        )}
-
-        {/* ── Close day tab ── */}
-        {tab === 'close' && (
-          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-            {closeMsg && (
-              <div style={{ backgroundColor:'rgba(34,197,94,0.1)', border:'1px solid rgba(34,197,94,0.3)', borderRadius:14, padding:'13px 16px', color:'#22C55E', fontWeight:700, fontSize:14 }}>
-                ✓ {closeMsg}
               </div>
             )}
+          </div>
+        )}
 
-            <div style={{ backgroundColor:'#141414', borderRadius:16, border:'1px solid rgba(255,255,255,0.06)', padding:'20px' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:18 }}>
-                <div style={{ width:42, height:42, borderRadius:13, backgroundColor:'rgba(251,191,36,0.1)', border:'1px solid rgba(251,191,36,0.2)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <Calendar style={{ width:19, height:19, color:'#FBBF24' }}/>
-                </div>
-                <div>
-                  <p style={{ fontWeight:800, fontSize:15, color:'#FFF' }}>Cierre del día</p>
-                  <p style={{ fontSize:12, color:'#555' }}>Fecha: {today}</p>
-                </div>
-              </div>
-
-              <div style={{ backgroundColor:'rgba(255,255,255,0.03)', borderRadius:11, padding:'13px 15px', marginBottom:16 }}>
-                <p style={{ fontSize:13, color:'#777', lineHeight:1.7 }}>
-                  Al cerrar el día:<br/>
-                  • Se descarga el <strong style={{ color:'#EAEAEA' }}>PDF</strong> con el resumen completo<br/>
-                  • Se borran los <strong style={{ color:'#EF4444' }}>pedidos</strong> de cocina/ventana de hoy<br/>
-                  • Las <strong style={{ color:'#22C55E' }}>transacciones</strong> quedan guardadas en el historial
-                </p>
-              </div>
-
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
-                <div style={{ textAlign:'center', padding:'13px', backgroundColor:'rgba(34,197,94,0.06)', borderRadius:11, border:'1px solid rgba(34,197,94,0.15)' }}>
-                  <p style={{ fontSize:11, color:'#555', marginBottom:3 }}>Ventas del día</p>
-                  <p style={{ fontSize:22, fontWeight:900, color:'#22C55E' }}>L.{todaySales.toFixed(2)}</p>
-                </div>
-                <div style={{ textAlign:'center', padding:'13px', backgroundColor: todayNet>=0?'rgba(34,197,94,0.06)':'rgba(239,68,68,0.06)', borderRadius:11, border:`1px solid ${todayNet>=0?'rgba(34,197,94,0.15)':'rgba(239,68,68,0.15)'}` }}>
-                  <p style={{ fontSize:11, color:'#555', marginBottom:3 }}>Utilidad neta</p>
-                  <p style={{ fontSize:22, fontWeight:900, color: todayNet>=0?'#22C55E':'#EF4444' }}>L.{todayNet.toFixed(2)}</p>
-                </div>
-              </div>
-
-              <div style={{ display:'flex', gap:10 }}>
-                <button onClick={() => downloadPDF(today)} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'13px', borderRadius:12, border:'1px solid rgba(255,255,255,0.08)', backgroundColor:'rgba(255,255,255,0.04)', color:'#EAEAEA', fontWeight:700, fontSize:14, cursor:'pointer', WebkitAppearance:'none' }}>
-                  <Download style={{ width:15, height:15 }}/> Solo PDF
-                </button>
-                <button onClick={handleCloseDay} disabled={closing} style={{ flex:2, display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'13px', borderRadius:12, border:'none', backgroundColor: closing?'rgba(239,68,68,0.3)':'#EF4444', color:'#FFF', fontWeight:800, fontSize:14, cursor:closing?'not-allowed':'pointer', WebkitAppearance:'none' }}>
-                  {closing ? <><RefreshCw style={{ width:15, height:15 }}/> Cerrando...</> : <><Calendar style={{ width:15, height:15 }}/> Cerrar día + PDF</>}
-                </button>
-              </div>
+        {/* ── TRANSACTIONS ── */}
+        {tab==='transactions' && (
+          <div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+              <p style={{ fontSize:13, color:'#6B7280', fontFamily:F }}>{transactions.length} transaccion{transactions.length!==1?'es':''} en total</p>
+              <button onClick={()=>setShowAddTx(true)} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 13px', borderRadius:9, border:BORDER, backgroundColor:CARD2, color:ORANGE, fontWeight:600, fontSize:12, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>
+                <Plus style={{ width:12,height:12 }}/> Nueva
+              </button>
             </div>
 
-            <div style={{ backgroundColor:'#141414', borderRadius:16, border:'1px solid rgba(255,255,255,0.06)', padding:'16px 18px' }}>
-              <p style={{ fontWeight:800, fontSize:13, color:'#FFF', marginBottom:10 }}>
-                Pedidos activos en cocina: <span style={{ color:'#FF6B35' }}>{orders.filter(o=>o.status!=='delivered').length}</span>
-              </p>
-              {orders.filter(o=>o.status!=='delivered').length === 0
-                ? <p style={{ color:'#333', fontSize:13 }}>No hay pedidos pendientes</p>
-                : orders.filter(o=>o.status!=='delivered').map(o => (
-                    <div key={o.id} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 11px', backgroundColor:'rgba(255,255,255,0.03)', borderRadius:8, marginBottom:5 }}>
-                      <span style={{ fontSize:13, fontWeight:700, color:'#FFF' }}>{o.id}</span>
-                      <span style={{ fontSize:12, color:'#555' }}>{o.sentBy} · L.{o.total.toFixed(2)}</span>
-                      <span style={{ fontSize:11, fontWeight:700, padding:'3px 8px', borderRadius:100, backgroundColor:'rgba(249,115,22,0.15)', color:'#F97316' }}>{o.status}</span>
+            <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+              {[...transactions].reverse().map(tx=>{
+                const c = TX_COLORS[tx.type]||'#6B7280';
+                const sign = tx.type==='expense'?'-':'+';
+                return (
+                  <div key={tx.id} style={{ display:'flex', alignItems:'center', gap:12, backgroundColor:CARD, border:BORDER, borderRadius:10, padding:'11px 14px' }}>
+                    <div style={{ width:8, height:8, borderRadius:'50%', backgroundColor:c, flexShrink:0 }}/>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <p style={{ fontSize:13, color:'#EDF0F4', fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontFamily:F }}>{tx.description}</p>
+                      <p style={{ fontSize:10, color:'#374151', marginTop:2, fontFamily:MONO }}>
+                        {TX_LABELS[tx.type]} · {tx.timestamp.slice(0,10)} {tx.timestamp.slice(11,16)}
+                      </p>
                     </div>
-                  ))
-              }
+                    <span style={{ fontSize:14, fontWeight:800, color:c, fontFamily:MONO, flexShrink:0 }}>{sign}L.{tx.amount.toFixed(2)}</span>
+                    <button onClick={()=>deleteTransaction(tx.id)} style={{ width:28, height:28, borderRadius:7, backgroundColor:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.15)', color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', WebkitAppearance:'none', flexShrink:0 }}>
+                      <Trash2 style={{ width:11, height:11 }}/>
+                    </button>
+                  </div>
+                );
+              })}
+              {transactions.length===0&&(
+                <div style={{ textAlign:'center', padding:'48px 0', color:'#374151' }}>
+                  <BarChart3 style={{ width:36, height:36, margin:'0 auto 10px', color:'#1F2937' }}/>
+                  <p style={{ fontSize:14, fontFamily:F }}>Sin transacciones</p>
+                </div>
+              )}
             </div>
           </div>
         )}
 
+        {/* ── CLOSE DAY ── */}
+        {tab==='close' && (
+          <div style={{ maxWidth:500 }}>
+            <div style={{ backgroundColor:CARD, border:BORDER, borderRadius:12, padding:'20px 22px', marginBottom:16 }}>
+              <p style={{ fontWeight:700, fontSize:15, color:'#EDF0F4', marginBottom:4, fontFamily:F }}>Cierre del día</p>
+              <p style={{ fontSize:12, color:'#6B7280', marginBottom:18, fontFamily:F }}>Elimina todos los pedidos de cocina del día seleccionado. Las transacciones no se eliminan.</p>
+
+              <Label>Fecha a cerrar</Label>
+              <input type="date" value={closeDate} onChange={e=>setCloseDate(e.target.value)}
+                style={{ width:'100%', padding:'11px 13px', borderRadius:9, border:BORDER, backgroundColor:CARD2, color:'#EDF0F4', fontSize:14, outline:'none', boxSizing:'border-box', marginBottom:14, fontFamily:MONO }}/>
+
+              {closeDate && (()=>{
+                const s = buildDailySummary(closeDate);
+                return (
+                  <div style={{ backgroundColor:CARD2, borderRadius:9, padding:'14px', marginBottom:16, border:BORDER }}>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                      {[
+                        { l:'Ventas', v:`L.${s.totalSales.toFixed(2)}`, c:'#22C55E' },
+                        { l:'Gastos', v:`L.${s.totalExpenses.toFixed(2)}`, c:'#EF4444' },
+                        { l:'Otros', v:`L.${s.otherIncome.toFixed(2)}`, c:'#3B82F6' },
+                        { l:'Neto', v:`L.${s.netProfit.toFixed(2)}`, c:s.netProfit>=0?'#22C55E':'#EF4444' },
+                      ].map(r=>(
+                        <div key={r.l}>
+                          <p style={{ fontSize:10, color:'#4B5563', fontFamily:MONO, letterSpacing:1 }}>{r.l}</p>
+                          <p style={{ fontSize:16, fontWeight:800, color:r.c, fontFamily:MONO }}>{r.v}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div style={{ display:'flex', gap:9 }}>
+                <button onClick={downloadPDF} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'12px', borderRadius:10, border:BORDER, backgroundColor:CARD2, color:'#9AA3B0', fontWeight:700, fontSize:13, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>
+                  <Download style={{ width:14,height:14 }}/> PDF
+                </button>
+                <button onClick={doClose} disabled={closing} style={{ flex:2, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'12px', borderRadius:10, border:'none', backgroundColor:closing?'rgba(239,68,68,0.2)':'rgba(239,68,68,0.85)', color:'#FFF', fontWeight:700, fontSize:13, cursor:closing?'not-allowed':'pointer', WebkitAppearance:'none', fontFamily:F }}>
+                  {closing ? <RefreshCw style={{ width:14,height:14 }}/> : null}
+                  {closing?'Cerrando...':closed?'✓ Cerrado':'Cerrar día'}
+                </button>
+              </div>
+            </div>
+
+            <p style={{ fontSize:11, color:'#374151', fontFamily:F, lineHeight:1.6 }}>
+              ⚠ Esta acción elimina permanentemente los pedidos de cocina del día. Las transacciones financieras se conservan.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
