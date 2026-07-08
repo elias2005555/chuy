@@ -1,28 +1,29 @@
 import { createClient, RealtimeChannel } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 const projectId = 'taxicpjtltijhzpojmxw';
-const publicAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRheGljcGp0bHRpamh6cG9qbXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0MjA3MjgsImV4cCI6MjA2NDk5NjcyOH0.rAUINlyH24n9NdSAkaUMIE9-LfSVn1Uuy-7EsG0b3ek';
+const publicAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRheGljcGp0bHRpamh6cG9qbXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzQ0MTUsImV4cCI6MjA5NzExMDQxNX0.rAUINlyH24n9NdSAkaUMIE9-LfSVn1Uuy-7EsG0b3ek';
 
 const SUPABASE_URL = `https://${projectId}.supabase.co`;
 
-// Solo usar proxy en Vercel (evita bloqueo DNS del WiFi)
-// NO activar en figma.site ni localhost
-const USE_PROXY = typeof window !== 'undefined' &&
-  (window.location.hostname.includes('vercel.app') ||
-   window.location.hostname.includes('dondechuypos'));
-
-function proxyFetch(url: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+// Intenta directo primero; si falla, usa el proxy de Vercel
+async function smartFetch(url: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const urlStr = url.toString();
-  if (USE_PROXY && urlStr.startsWith(SUPABASE_URL)) {
-    const proxied = `${window.location.origin}/api/supabase?_url=${encodeURIComponent(urlStr)}`;
+  if (!urlStr.startsWith(SUPABASE_URL)) return fetch(url, init);
+  try {
+    const r = await fetch(url, init);
+    if (r.ok || r.status < 500) return r;
+    throw new Error(`status ${r.status}`);
+  } catch {
+    // Fallback: proxy de Vercel
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const proxied = `${origin}/api/supabase?_url=${encodeURIComponent(urlStr)}`;
     return fetch(proxied, init);
   }
-  return fetch(url, init);
 }
 
 const supabase = createClient(SUPABASE_URL, publicAnonKey, {
   realtime: { params: { eventsPerSecond: 10 } },
-  global: { fetch: proxyFetch },
+  global: { fetch: smartFetch },
 });
 
 const LS_KEY  = 'ddc-state-v7';
@@ -161,17 +162,27 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     return () => bc.close();
   }, [apply]);
 
+  const ping = useCallback(async (): Promise<boolean> => {
+    try {
+      const r = await smartFetch(`${SUPABASE_URL}/rest/v1/`, {
+        headers: { apikey: publicAnonKey, Authorization: `Bearer ${publicAnonKey}` },
+      });
+      return r.status < 500;
+    } catch { return false; }
+  }, []);
+
   const fetchAll = useCallback(async (): Promise<boolean> => {
     try {
       const [{ data: od, error: oe }, { data: td, error: te }] = await Promise.all([
         supabase.from('orders').select('*').order('timestamp', { ascending: false }),
         supabase.from('transactions').select('*').order('timestamp', { ascending: false }),
       ]);
-      if (oe || te) return false;
+      const reachable = await ping();
+      if (oe || te) return reachable; // conectado pero tablas con error
       apply({ orders: (od || []).map(fromDb), transactions: (td || []).map((r: any) => ({ ...r, amount: parseFloat(r.amount) })) }, true);
       return true;
-    } catch { return false; }
-  }, [apply]);
+    } catch { return ping(); }
+  }, [apply, ping]);
 
   const writeOrder = useCallback(async (op: QOp) => {
     try {
