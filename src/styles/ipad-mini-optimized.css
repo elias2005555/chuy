@@ -1,0 +1,608 @@
+/* ============================================
+   OPTIMIZACIÓN PARA iPAD MINI 4 (768x1024)
+   Safari iOS - Versión definitiva
+   ============================================ */
+
+/* ============================================
+   BASE - CONFIGURACIÓN INICIAL
+   ============================================ */
+
+html {
+  font-size: 16px !important;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================
+   TIPOGRAFÍA - TAMAÑOS OPTIMIZADOS
+   ============================================ */
+
+h1 {
+  font-size: 2rem !important; /* 32px */
+  line-height: 1.3 !important;
+  letter-spacing: -0.02em !important;
+}
+
+h2 {
+  font-size: 1.5rem !important; /* 24px */
+  line-height: 1.3 !important;
+}
+
+h3 {
+  font-size: 1.25rem !important; /* 20px */
+  line-height: 1.4 !important;
+}
+
+h4 {
+  font-size: 1.125rem !important; /* 18px */
+}
+
+p {
+  font-size: 1rem !important; /* 16px */
+  line-height: 1.5 !important;
+}
+
+/* ============================================
+   BOTONES - TÁCTILES Y ACCESIBLES
+   ============================================ */
+
+button {
+  min-height: 48px !important;
+  min-width: 48px !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  padding: 0.75rem 1.25rem !important;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Botones grandes */
+button.home-button {
+  min-height: 160px !important;
+  padding: 1.5rem !important;
+}
+
+/* ============================================
+   INPUTS - PREVENIR ZOOM EN SAFARI iOS
+   ============================================ */
+
+input,
+textarea,
+select {
+  font-size: 16px !important; /* CRÍTICO: evita zoom en iOS */
+  min-height: 48px !important;
+  padding: 0.875rem 1rem !important;
+  border-width: 2px !important;
+  -webkit-appearance: none;
+  border-radius: 0.5rem !important;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  font-size: 16px !important;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ============================================
+   CONTRASTE Y VISIBILIDAD
+   ============================================ */
+
+/* Mejorar texto gris */
+.text-gray-400 { color: #6b7280 !important; }
+.text-gray-500 { color: #4b5563 !important; }
+.text-gray-600 { color: #374151 !important; }
+.text-white\/40 { color: rgba(255, 255, 255, 0.7) !important; }
+.text-white\/50 { color: rgba(255, 255, 255, 0.8) !important; }
+.text-white\/60 { color: rgba(255, 255, 255, 0.85) !important; }
+
+/* Mejorar bordes */
+.border { border-width: 2px !important; }
+.border-gray-100 { border-color: #d1d5db !important; }
+.border-gray-200 { border-color: #9ca3af !important; }
+
+/* ============================================
+   TAMAÑOS DE TEXTO TAILWIND
+   ============================================ */
+
+.text-xs { font-size: 0.875rem !important; } /* 14px */
+.text-sm { font-size: 1rem !important; } /* 16px */
+.text-base { font-size: 1rem !important; } /* 16px */
+.text-lg { font-size: 1.125rem !important; } /* 18px */
+.text-xl { font-size: 1.25rem !important; } /* 20px */
+.text-2xl { font-size: 1.5rem !important; } /* 24px */
+.text-3xl { font-size: 2rem !important; } /* 32px */
+
+/* ============================================
+   ESPACIADO Y PADDING
+   ============================================ */
+
+.p-2 { padding: 0.625rem !important; }
+.p-3 { padding: 0.875rem !important; }
+.p-4 { padding: 1.125rem !important; }
+.p-5 { padding: 1.5rem !important; }
+.p-6 { padding: 1.75rem !important; }
+.p-8 { padding: 2rem !important; }
+
+.gap-2 { gap: 0.625rem !important; }
+.gap-3 { gap: 0.875rem !important; }
+.gap-4 { gap: 1.125rem !important; }
+.gap-5 { gap: 1.25rem !important; }
+
+/* ============================================
+   ICONOS - TAMAÑO VISIBLE
+   ============================================ */
+
+svg {
+  min-width: 1.5rem !important;
+  min-height: 1.5rem !important;
+}
+
+/* Iconos grandes en botones principales */
+.home-button svg {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+}
+
+/* ============================================
+   SOMBRAS - MÁS PRONUNCIADAS
+   ============================================ */
+
+.shadow-sm { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important; }
+.shadow { box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2) !important; }
+.shadow-md { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important; }
+.shadow-lg { box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25) !important; }
+.shadow-xl { box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important; }
+.shadow-2xl { box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35) !important; }
+
+/* ============================================
+   BORDES REDONDEADOS
+   ============================================ */
+
+.rounded-xl { border-radius: 1rem !important; }
+.rounded-2xl { border-radius: 1.25rem !important; }
+.rounded-3xl { border-radius: 1.5rem !important; }
+
+/* ============================================
+   GRIDS - OPTIMIZADOS PARA iPad
+   ============================================ */
+
+.grid {
+  gap: 1rem !important;
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr) !important;
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, 1fr) !important;
+}
+
+.grid-cols-4 {
+  grid-template-columns: repeat(4, 1fr) !important;
+}
+
+/* ============================================
+   TABLAS - LEGIBLES
+   ============================================ */
+
+table {
+  font-size: 1rem !important;
+}
+
+table th,
+table td {
+  padding: 1rem !important;
+}
+
+/* ============================================
+   HOMEPAGE - ELEMENTOS ESPECÍFICOS
+   ============================================ */
+
+.home-logo {
+  width: 6rem !important; /* 96px mobile */
+  height: auto !important;
+}
+
+@media (min-width: 640px) {
+  .home-logo {
+    width: 7rem !important; /* 112px tablet */
+  }
+}
+
+/* Botones home - Responsive para mobile y tablet */
+.home-button {
+  min-height: 160px !important;
+  padding: 1.5rem 1rem !important;
+}
+
+@media (min-width: 640px) {
+  .home-button {
+    min-height: 180px !important;
+    padding: 2rem 1.5rem !important;
+  }
+}
+
+/* Efecto Mario Bounce mejorado */
+@keyframes mario-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.active\:animate-bounce:active {
+  animation: mario-bounce 0.3s ease-in-out;
+}
+
+/* Asegurar que los gradientes se vean bien */
+@media (max-width: 768px) {
+  .backdrop-blur-sm {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  /* Mejorar legibilidad en fondos oscuros */
+  .bg-clip-text {
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}
+
+/* ============================================
+   COLORES PRIMARY - MEJOR CONTRASTE
+   ============================================ */
+
+.bg-primary {
+  background-color: #F2B705 !important;
+}
+
+.text-primary {
+  color: #D4A004 !important;
+}
+
+.border-primary {
+  border-color: #F2B705 !important;
+}
+
+/* ============================================
+   HEADERS Y NAVBAR - FONDOS OSCUROS
+   ============================================ */
+
+header {
+  background: #1f2937 !important;
+  background-image: linear-gradient(to right, #1f2937, #111827) !important;
+  border-bottom: 3px solid #374151 !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ============================================
+   BACKDROPS - MÁS OSCUROS
+   ============================================ */
+
+.bg-black\/40 { background-color: rgba(0, 0, 0, 0.6) !important; }
+.bg-black\/60 { background-color: rgba(0, 0, 0, 0.75) !important; }
+.bg-black\/70 { background-color: rgba(0, 0, 0, 0.85) !important; }
+
+/* ============================================
+   OPTIMIZACIONES SAFARI iOS
+   ============================================ */
+
+/* Eliminar highlight en tap */
+* {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+a, button {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Fix viewport height en Safari */
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+
+  html {
+    height: -webkit-fill-available;
+  }
+}
+
+/* Scroll suave */
+.overflow-auto,
+.overflow-scroll {
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* Performance en animaciones */
+[class*="animate-"],
+[class*="transition-"],
+.gpu-accelerated {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* Prevenir zoom accidental */
+* {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea,
+select,
+[contenteditable],
+a {
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+
+/* ============================================
+   SAFE AREAS - NOTCH
+   ============================================ */
+
+@supports (padding: max(0px)) {
+  body {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* ============================================
+   MOBILE FIRST - SMARTPHONES
+   ============================================ */
+
+/* Smartphones pequeños (320px - 375px) */
+@media (max-width: 375px) {
+  html {
+    font-size: 14px !important;
+  }
+
+  .home-button {
+    min-height: 140px !important;
+    padding: 1.25rem 0.75rem !important;
+  }
+
+  .home-logo {
+    width: 5rem !important; /* 80px */
+  }
+
+  h1 {
+    font-size: 1.75rem !important; /* 28px */
+  }
+}
+
+/* Smartphones medianos (375px - 425px) */
+@media (min-width: 376px) and (max-width: 425px) {
+  .home-button {
+    min-height: 150px !important;
+  }
+}
+
+/* Tablets y iPads (768px+) */
+@media (min-width: 768px) {
+  .home-button {
+    min-height: 180px !important;
+  }
+}
+
+/* ============================================
+   LANDSCAPE MODE
+   ============================================ */
+
+@media (orientation: landscape) and (min-width: 1024px) {
+  .grid-cols-2 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  .grid-cols-3 {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+}
+
+/* ============================================
+   COMPATIBILIDAD iOS 15 - COLORES FORZADOS
+   ============================================ */
+
+/* Forzar colores Mario Bros en iOS */
+.bg-gradient-to-r.from-red-600,
+.bg-gradient-to-b.from-red-500 {
+  background: linear-gradient(to bottom, #dc2626, #b91c1c) !important;
+  background-color: #dc2626 !important;
+}
+
+.bg-gradient-to-b.from-yellow-400 {
+  background: linear-gradient(to bottom, #fbbf24, #f59e0b) !important;
+  background-color: #fbbf24 !important;
+}
+
+.bg-gradient-to-b.from-blue-500 {
+  background: linear-gradient(to bottom, #3b82f6, #2563eb) !important;
+  background-color: #3b82f6 !important;
+}
+
+.bg-gradient-to-b.from-green-500 {
+  background: linear-gradient(to bottom, #10b981, #059669) !important;
+  background-color: #10b981 !important;
+}
+
+.bg-gradient-to-b.from-amber-500 {
+  background: linear-gradient(to bottom, #f59e0b, #d97706) !important;
+  background-color: #f59e0b !important;
+}
+
+.bg-gradient-to-b.from-gray-300 {
+  background: linear-gradient(to bottom, #d1d5db, #9ca3af) !important;
+  background-color: #d1d5db !important;
+}
+
+/* FONDO HOMEPAGE - CIELO AZUL MARIO */
+.bg-gradient-to-b.from-blue-400 {
+  background: linear-gradient(to bottom, #60a5fa 0%, #93c5fd 50%, #3b82f6 100%) !important;
+  background-color: #60a5fa !important;
+}
+
+/* Suelo naranja Mario */
+.bg-gradient-to-b.from-orange-600 {
+  background: linear-gradient(to bottom, #ea580c, #c2410c) !important;
+  background-color: #ea580c !important;
+}
+
+/* Logo amarillo (question block) */
+.bg-gradient-to-br.from-yellow-400 {
+  background: linear-gradient(to bottom right, #fbbf24, #f59e0b, #d97706) !important;
+  background-color: #fbbf24 !important;
+}
+
+/* Conexión verde (power-up) */
+.bg-gradient-to-r.from-green-400 {
+  background: linear-gradient(to right, #4ade80, #22c55e) !important;
+  background-color: #22c55e !important;
+}
+
+/* Conexión amarilla (conectando) */
+.bg-gradient-to-r.from-yellow-400 {
+  background: linear-gradient(to right, #fbbf24, #f59e0b) !important;
+  background-color: #fbbf24 !important;
+}
+
+/* Colores de fondo sólidos */
+.bg-red-500 { background-color: #ef4444 !important; }
+.bg-red-600 { background-color: #dc2626 !important; }
+.bg-yellow-400 { background-color: #fbbf24 !important; }
+.bg-yellow-500 { background-color: #f59e0b !important; }
+.bg-yellow-300 { background-color: #fcd34d !important; }
+.bg-blue-400 { background-color: #60a5fa !important; }
+.bg-blue-300 { background-color: #93c5fd !important; }
+.bg-blue-500 { background-color: #3b82f6 !important; }
+.bg-green-400 { background-color: #4ade80 !important; }
+.bg-green-500 { background-color: #22c55e !important; }
+.bg-orange-600 { background-color: #ea580c !important; }
+.bg-orange-700 { background-color: #c2410c !important; }
+.bg-white { background-color: #ffffff !important; }
+
+/* Nubes blancas del cielo Mario */
+.rounded-full.bg-white {
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
+  -webkit-box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Bordes Mario Bros */
+.border-red-800 { border-color: #991b1b !important; }
+.border-red-700 { border-color: #b91c1c !important; }
+.border-yellow-600 { border-color: #d97706 !important; }
+.border-yellow-700 { border-color: #b45309 !important; }
+.border-blue-700 { border-color: #1d4ed8 !important; }
+.border-blue-800 { border-color: #1e40af !important; }
+.border-green-700 { border-color: #15803d !important; }
+.border-green-500 { border-color: #22c55e !important; }
+.border-amber-700 { border-color: #b45309 !important; }
+.border-orange-800 { border-color: #9a3412 !important; }
+
+/* Texto Mario Bros */
+.text-amber-600 { color: #d97706 !important; }
+.text-gray-900 { color: #111827 !important; }
+
+/* Asegurar que backdrop-blur funcione en iOS */
+.backdrop-blur-sm {
+  -webkit-backdrop-filter: blur(4px) !important;
+  backdrop-filter: blur(4px) !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Forzar opacidades en iOS */
+.bg-white\/10 { background-color: rgba(255, 255, 255, 0.1) !important; }
+.bg-white\/20 { background-color: rgba(255, 255, 255, 0.2) !important; }
+.bg-white\/30 { background-color: rgba(255, 255, 255, 0.3) !important; }
+.bg-white\/40 { background-color: rgba(255, 255, 255, 0.4) !important; }
+
+.bg-black\/20 { background-color: rgba(0, 0, 0, 0.2) !important; }
+.bg-black\/30 { background-color: rgba(0, 0, 0, 0.3) !important; }
+
+.bg-yellow-400\/50 { background-color: rgba(251, 191, 36, 0.5) !important; }
+
+.border-white\/20 { border-color: rgba(255, 255, 255, 0.2) !important; }
+.border-white\/30 { border-color: rgba(255, 255, 255, 0.3) !important; }
+
+/* Opacidades de nubes y efectos HomePage */
+.opacity-90 { opacity: 0.9 !important; }
+.opacity-50 { opacity: 0.5 !important; }
+
+/* Sombras visibles en iOS */
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+  -webkit-box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3) !important;
+  -webkit-box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3) !important;
+}
+
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3) !important;
+  -webkit-box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2) !important;
+  -webkit-box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Efecto drop-shadow para iconos */
+.drop-shadow-md {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)) !important;
+  -webkit-filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)) !important;
+}
+
+.drop-shadow-lg {
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4)) !important;
+  -webkit-filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4)) !important;
+}
+
+/* Forzar animaciones suaves en iOS */
+@-webkit-keyframes bounce {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.animate-bounce {
+  -webkit-animation: bounce 1s infinite;
+  animation: bounce 1s infinite;
+}
+
+/* Asegurar que los blur funcionen */
+.blur-sm {
+  filter: blur(4px) !important;
+  -webkit-filter: blur(4px) !important;
+}
+
+.blur-md {
+  filter: blur(8px) !important;
+  -webkit-filter: blur(8px) !important;
+}
+
+.blur-lg {
+  filter: blur(12px) !important;
+  -webkit-filter: blur(12px) !important;
+}
+
+.blur-xl {
+  filter: blur(16px) !important;
+  -webkit-filter: blur(16px) !important;
+}
