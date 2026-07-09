@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useOrders } from './OrderContext';
-import { ShoppingCart, ChefHat, Wifi, WifiOff } from 'lucide-react';
+import { ShoppingCart, ChefHat, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import logoImg from '../../imports/image-1.png';
 
 const F = "'Inter', -apple-system, sans-serif";
@@ -9,8 +9,15 @@ const MONO = "'JetBrains Mono', monospace";
 
 export default function HomePage() {
   const navigate = useNavigate();
-  const { connected, orders } = useOrders();
+  const { connected, orders, reconnect } = useOrders();
   const [taps, setTaps] = useState(0);
+  const [reconnecting, setReconnecting] = useState(false);
+
+  const handleReconnect = async () => {
+    setReconnecting(true);
+    await reconnect();
+    setTimeout(() => setReconnecting(false), 1000);
+  };
 
   const handleLogoTap = () => {
     const n = taps + 1;
@@ -48,13 +55,19 @@ export default function HomePage() {
       <p style={{ fontSize:13, color:'#374151', fontWeight:600, letterSpacing:3, textTransform:'uppercase', marginBottom:28, textAlign:'center' }}>Business · Sistema POS</p>
 
       {/* Status */}
-      <div style={{ marginBottom:36 }}>
+      <div style={{ marginBottom:36, display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
         <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'8px 18px', borderRadius:100, backgroundColor:connected?'rgba(34,197,94,0.07)':'rgba(239,68,68,0.07)', border:`1px solid ${connected?'rgba(34,197,94,0.2)':'rgba(239,68,68,0.2)'}` }}>
           {connected ? <Wifi style={{ width:14, height:14, color:'#22C55E' }}/> : <WifiOff style={{ width:14, height:14, color:'#EF4444' }}/>}
           <span style={{ fontSize:13, fontWeight:700, color:connected?'#22C55E':'#EF4444', fontFamily:MONO, letterSpacing:1 }}>
             {connected?'ONLINE':'OFFLINE'}
           </span>
         </div>
+        {!connected && (
+          <button onClick={handleReconnect} disabled={reconnecting} style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'7px 16px', borderRadius:100, border:'1px solid rgba(249,115,22,0.3)', backgroundColor:'rgba(249,115,22,0.08)', color:'#F97316', fontWeight:700, fontSize:12, cursor:reconnecting?'not-allowed':'pointer', WebkitAppearance:'none', fontFamily:MONO }}>
+            <RefreshCw style={{ width:12, height:12, animation:reconnecting?'spin 1s linear infinite':undefined }}/>
+            {reconnecting ? 'Conectando...' : 'Reconectar'}
+          </button>
+        )}
       </div>
 
       {/* Nav buttons */}

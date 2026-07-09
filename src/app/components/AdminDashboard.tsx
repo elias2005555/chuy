@@ -136,7 +136,7 @@ function PasswordGate({ onUnlock }: { onUnlock:()=>void }) {
 // ─── Main Admin ───────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { transactions, deleteTransaction, addTransaction, getTotalSales, getTotalExpenses, getOtherIncome, getNetProfit, buildDailySummary, closeDayAndClean, orders } = useOrders();
+  const { transactions, deleteTransaction, addTransaction, getTotalSales, getTotalExpenses, getOtherIncome, getNetProfit, buildDailySummary, closeDayAndClean, cleanOldOrders, orders } = useOrders();
 
   const [unlocked,setUnlocked]   = useState(false);
   const [tab,setTab]             = useState<'overview'|'transactions'|'close'>('overview');
@@ -144,6 +144,8 @@ export default function AdminDashboard() {
   const [closeDate,setCloseDate] = useState(new Date().toISOString().slice(0,10));
   const [closing,setClosing]     = useState(false);
   const [closed,setClosed]       = useState(false);
+  const [cleaning,setCleaning]   = useState(false);
+  const [cleanMsg,setCleanMsg]   = useState<string|null>(null);
 
   const today = new Date().toISOString().slice(0,10);
   const todayTx = useMemo(()=>transactions.filter(t=>t.timestamp.startsWith(today)),[transactions,today]);
@@ -337,6 +339,34 @@ export default function AdminDashboard() {
             <p style={{ fontSize:11, color:'#374151', fontFamily:F, lineHeight:1.6 }}>
               ⚠ Esta acción elimina permanentemente los pedidos de cocina del día. Las transacciones financieras se conservan.
             </p>
+
+            {/* Clean old orders */}
+            <div style={{ backgroundColor:CARD, border:'1px solid rgba(239,68,68,0.2)', borderRadius:12, padding:'20px 22px', marginTop:16 }}>
+              <p style={{ fontWeight:700, fontSize:15, color:'#EDF0F4', marginBottom:4, fontFamily:F }}>Limpiar historial antiguo</p>
+              <p style={{ fontSize:12, color:'#6B7280', marginBottom:18, fontFamily:F }}>
+                Borra de la base de datos todos los pedidos anteriores a hoy. Útil si la app se pone lenta por acumular muchos pedidos viejos.
+              </p>
+              <button
+                onClick={async () => {
+                  setCleaning(true);
+                  setCleanMsg(null);
+                  const n = await cleanOldOrders();
+                  setCleaning(false);
+                  if (n < 0) setCleanMsg('Error al conectar con la base de datos.');
+                  else if (n === 0) setCleanMsg('No había pedidos antiguos que borrar.');
+                  else setCleanMsg(`✓ Se borraron ${n} pedido${n!==1?'s':''} antiguos.`);
+                }}
+                disabled={cleaning}
+                style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'13px', borderRadius:10, border:'none', backgroundColor:cleaning?'rgba(239,68,68,0.15)':'rgba(239,68,68,0.75)', color:'#FFF', fontWeight:700, fontSize:14, cursor:cleaning?'not-allowed':'pointer', WebkitAppearance:'none', fontFamily:F }}>
+                {cleaning ? <RefreshCw style={{ width:15,height:15 }}/> : <Trash2 style={{ width:15,height:15 }}/>}
+                {cleaning ? 'Limpiando...' : 'Borrar pedidos antiguos'}
+              </button>
+              {cleanMsg && (
+                <p style={{ fontSize:13, fontWeight:600, color:cleanMsg.startsWith('✓')?'#22C55E':'#EF4444', marginTop:12, textAlign:'center', fontFamily:F }}>
+                  {cleanMsg}
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>

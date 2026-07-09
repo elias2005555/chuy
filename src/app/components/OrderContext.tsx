@@ -50,6 +50,8 @@ interface OrderContextType {
   getOtherIncome: () => number; getNetProfit: () => number;
   buildDailySummary: (date: string) => DailySummary;
   closeDayAndClean: (date: string) => Promise<void>;
+  cleanOldOrders: () => Promise<number>;
+  reconnect: () => Promise<void>;
 }
 
 const Ctx = createContext<OrderContextType | undefined>(undefined);
@@ -256,11 +258,19 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let ordCh: RealtimeChannel, txCh: RealtimeChannel;
-    const setup = async () => {
+    let reconnTimer: ReturnType<typeof setTimeout> | null = null;
+    let destroyed = false;
+
+    const connect = async () => {
+      if (destroyed) return;
+      try { if (ordCh) await supabase.removeChannel(ordCh); } catch {}
+      try { if (txCh)  await supabase.removeChannel(txCh);  } catch {}
+
       await new Promise(r => setTimeout(r, 800));
-      ordCh = supabase.channel('orders-rt-v7')
+      if (destroyed) return;
+
+      ordCh = supabase.channel('orders-rt-v8')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
-          // Receiving a realtime event means the WebSocket is alive
           realtimeConnectedRef.current = true;
           setConnected(true);
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
@@ -282,16 +292,21 @@ export function OrderProvider({ children }: { children: ReactNode }) {
           }
         })
         .subscribe(status => {
-          const isSubscribed = status === 'SUBSCRIBED';
-          realtimeConnectedRef.current = isSubscribed;
-          // When subscribed, always mark connected. When not subscribed, only mark
-          // disconnected if realtime truly dropped (not just a transient REST issue).
-          setConnected(isSubscribed || realtimeConnectedRef.current);
+          if (status === 'SUBSCRIBED') {
+            realtimeConnectedRef.current = true;
+            setConnected(true);
+          } else if (status === 'CLOSED' || status === 'TIMED_OUT' || status === 'CHANNEL_ERROR') {
+            realtimeConnectedRef.current = false;
+            // Auto-reconectar en 5 segundos
+            if (!destroyed) {
+              if (reconnTimer) clearTimeout(reconnTimer);
+              reconnTimer = setTimeout(connect, 5000);
+            }
+          }
         });
 
-      txCh = supabase.channel('transactions-rt-v7')
+      txCh = supabase.channel('transactions-rt-v8')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, payload => {
-          // Receiving a realtime event means the WebSocket is alive
           realtimeConnectedRef.current = true;
           setConnected(true);
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
@@ -311,20 +326,21 @@ export function OrderProvider({ children }: { children: ReactNode }) {
               return upd;
             });
           }
-        }).subscribe(status => {
-          const isSubscribed = status === 'SUBSCRIBED';
-          // Only update realtimeConnectedRef to true here; the orders channel subscribe
-          // callback is the canonical source for disconnection state to avoid flip-flopping.
-          if (isSubscribed) {
+        })
+        .subscribe(status => {
+          if (status === 'SUBSCRIBED') {
             realtimeConnectedRef.current = true;
             setConnected(true);
           }
         });
     };
-    setup();
+
+    connect();
     return () => {
-      ordCh && supabase.removeChannel(ordCh).catch(() => {});
-      txCh  && supabase.removeChannel(txCh).catch(() => {});
+      destroyed = true;
+      if (reconnTimer) clearTimeout(reconnTimer);
+      try { if (ordCh) supabase.removeChannel(ordCh); } catch {}
+      try { if (txCh)  supabase.removeChannel(txCh);  } catch {}
     };
   }, []);
 
@@ -469,13 +485,41 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     setOrders(prev => { const u = prev.filter(o => !o.timestamp.startsWith(date)); saveLS({ orders: u, transactions: txRef.current }); return u; });
   }, []);
 
+  const reconnect = useCallback(async () => {
+    setConnected(false);
+    realtimeConnectedRef.current = false;
+    await flushQ();
+    const ok = await fetchAll();
+    if (ok) setConnected(true);
+  }, [fetchAll]);
+
+  // Borra TODOS los pedidos anteriores a hoy de Supabase y localStorage
+  const cleanOldOrders = useCallback(async (): Promise<number> => {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const since = todayStart.toISOString();
+    try {
+      const { count } = await supabase
+        .from('orders')
+        .delete({ count: 'exact' })
+        .lt('timestamp', since);
+      // Limpiar también del estado local
+      setOrders(prev => {
+        const u = prev.filter(o => o.timestamp >= since);
+        saveLS({ orders: u, transactions: txRef.current });
+        return u;
+      });
+      return count ?? 0;
+    } catch { return -1; }
+  }, []);
+
   return (
     <Ctx.Provider value={{
       orders, transactions, connected, pendingCount,
       addOrder, addItemsToOrder, updateOrderStatus, markItemReady,
       deleteOrder, addTransaction, deleteTransaction,
       getTotalSales, getTotalExpenses, getOtherIncome, getNetProfit,
-      buildDailySummary, closeDayAndClean,
+      buildDailySummary, closeDayAndClean, cleanOldOrders, reconnect,
     }}>
       {children}
     </Ctx.Provider>
