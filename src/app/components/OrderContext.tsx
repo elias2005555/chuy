@@ -154,7 +154,23 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         supabase.from('transactions').select('*').order('timestamp', { ascending: false }),
       ]);
       if (oe || te) return false;
-      apply({ orders: (od || []).map(fromDb), transactions: (td || []).map((r: any) => ({ ...r, amount: parseFloat(r.amount) })) }, true);
+
+      const dbOrders = (od || []).map(fromDb);
+      const dbTxs    = (td || []).map((r: any) => ({ ...r, amount: parseFloat(r.amount) }));
+
+      // Preserve local items pending confirmation in Supabase to avoid race-condition deletions
+      const q = loadQ();
+      const pendingOrderIds = new Set(q.filter(op => op.t === 'upsert_order').map(op => (op as any).d.id));
+      const pendingTxIds    = new Set(q.filter(op => op.t === 'upsert_tx').map(op => (op as any).d.id));
+      const localOnlyOrders = ordersRef.current.filter(o => pendingOrderIds.has(o.id) && !dbOrders.find(x => x.id === o.id));
+      const localOnlyTxs    = txRef.current.filter(t => pendingTxIds.has(t.id) && !dbTxs.find(x => x.id === t.id));
+
+      const mergedOrders = [...dbOrders, ...localOnlyOrders]
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      const mergedTxs = [...dbTxs, ...localOnlyTxs]
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+      apply({ orders: mergedOrders, transactions: mergedTxs }, true);
       return true;
     } catch { return false; }
   }, [apply]);

@@ -559,16 +559,16 @@ export default function POSTerminal() {
             </div>
 
             {/* Drinks panel */}
-            <div style={{ width:158,borderLeft:BORDER,backgroundColor:'#080A0F',display:'flex',flexDirection:'column',flexShrink:0 }}>
-              <div style={{ padding:'7px 6px 6px',borderBottom:BORDER,textAlign:'center',flexShrink:0 }}>
-                <Droplets style={{ width:11,height:11,color:'#3B82F6',margin:'0 auto 2px' }}/>
-                <p style={{ fontSize:9,fontWeight:700,color:'#3B82F6',letterSpacing:1.5,textTransform:'uppercase',fontFamily:MONO }}>Bebidas</p>
+            <div style={{ width:170,borderLeft:BORDER,backgroundColor:'#080A0F',display:'flex',flexDirection:'column',flexShrink:0 }}>
+              <div style={{ padding:'8px 8px 7px',borderBottom:BORDER,textAlign:'center',flexShrink:0 }}>
+                <Droplets style={{ width:13,height:13,color:'#3B82F6',margin:'0 auto 3px' }}/>
+                <p style={{ fontSize:11,fontWeight:700,color:'#3B82F6',letterSpacing:1.5,textTransform:'uppercase',fontFamily:MONO }}>Bebidas</p>
               </div>
-              <div style={{ flex:1,overflowY:'auto',padding:'5px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,alignContent:'start' }}>
+              <div style={{ flex:1,overflowY:'auto',padding:'6px',display:'flex',flexDirection:'column',gap:5 }}>
                 {DRINKS.map((d,i)=>(
-                  <button key={i} onClick={()=>chargeDrink(d)} style={{ backgroundColor:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.14)',borderRadius:8,padding:'6px 4px',cursor:'pointer',WebkitAppearance:'none',textAlign:'center',overflow:'hidden' }}>
-                    <p style={{ fontSize:9,fontWeight:600,color:'#CBD5E1',lineHeight:1.25,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:F }}>{d.name}</p>
-                    <p style={{ fontSize:12,fontWeight:800,color:'#60A5FA',fontFamily:MONO }}>L.{d.price}</p>
+                  <button key={i} onClick={()=>chargeDrink(d)} style={{ backgroundColor:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.14)',borderRadius:9,padding:'8px 10px',cursor:'pointer',WebkitAppearance:'none',textAlign:'left',display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,overflow:'hidden' }}>
+                    <p style={{ fontSize:12,fontWeight:600,color:'#CBD5E1',lineHeight:1.2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1,fontFamily:F }}>{d.name}</p>
+                    <p style={{ fontSize:13,fontWeight:800,color:'#60A5FA',fontFamily:MONO,flexShrink:0 }}>L.{d.price}</p>
                   </button>
                 ))}
               </div>
