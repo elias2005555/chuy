@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useOrders } from './OrderContext';
 import { ShoppingCart, ChefHat, Wifi, WifiOff, RefreshCw, AlertTriangle, Copy, Check } from 'lucide-react';
-import { ElectricLightning } from './ElectricLightning';
 
 const HOME_STYLE = `
 @keyframes hp-glow-pulse {
@@ -182,9 +181,6 @@ export default function HomePage() {
   return (
     <div style={{ minHeight:'100vh', backgroundColor:'#07090D', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'32px 20px', fontFamily:F, position:'relative', overflow:'hidden' }}>
       <style>{HOME_STYLE}</style>
-
-      {/* Electric lightning */}
-      <ElectricLightning/>
 
       {/* Grid bg */}
       <div style={{ position:'absolute', inset:0, pointerEvents:'none', backgroundImage:'linear-gradient(rgba(249,115,22,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(249,115,22,0.03) 1px,transparent 1px)', backgroundSize:'44px 44px' }}/>

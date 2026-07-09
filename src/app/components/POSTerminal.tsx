@@ -12,7 +12,19 @@ const KITCHEN_CATS = new Set(['Desayunos','Golosinas','Platos Fuertes']);
 const AUTO_CATS    = new Set(['Bebidas','Chucherías','Helados']);
 const DRINKS       = MENU_ITEMS.filter(i => i.category === 'Bebidas');
 
-const AVATARS = ['🤠','🥸','😎','🤡','👹','🐸','🦊','🐙','🦄','🤖','👽','🧙','🥷','🦁','🐯','🐻','🐼','🐷','🦝','🦆','🐧','🦖','👾','💀','🎃'];
+const AVATARS = [
+  // Personas graciosas / look
+  '🧑‍🦱','👨‍🦱','👩‍🦱', // colochos
+  '🧑‍🦲','👨‍🦲','👩‍🦲', // calvos
+  '🧑‍🦰','👨‍🦰','👩‍🦰', // pelirrojos
+  '🧑‍🦳','👨‍🦳','👩‍🦳', // canosos
+  // Caras locas
+  '🤠','🥸','😎','🤡','🥴','🤪','😜','🫠','😵‍💫','🤯','🥵','🤬','😤','🤓',
+  // Personajes
+  '🧙','🥷','👾','🤖','👽','💀','🎃','🧛','🧟','🧜','🧝','🫅','🤴','👸',
+  // Animales divertidos
+  '🐸','🦊','🐙','🦄','🦁','🐯','🐻','🐼','🐷','🦝','🦆','🐧','🦖','🦔','🦦','🐨','🦥',
+];
 const USERS = [
   { username:'Quedadito1', password:'eliaselmejor' },
   { username:'Quedadito2', password:'eliaselmejor' },
@@ -473,15 +485,54 @@ export default function POSTerminal() {
       {/* Modals */}
       {showAvatar&&(
         <div style={{ position:'fixed',inset:0,backgroundColor:'rgba(0,0,0,0.85)',zIndex:400,display:'flex',alignItems:'center',justifyContent:'center',padding:16 }}>
-          <div style={{ backgroundColor:CARD,borderRadius:16,border:BORDER,padding:18,width:'100%',maxWidth:300 }}>
+          <div style={{ backgroundColor:CARD,borderRadius:16,border:BORDER,padding:18,width:'100%',maxWidth:380 }}>
             <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14 }}>
-              <span style={{ fontWeight:700,fontSize:14,color:'#EDF0F4',fontFamily:F }}>Tu avatar</span>
+              <div>
+                <span style={{ fontWeight:800,fontSize:15,color:'#EDF0F4',fontFamily:F }}>Elige tu avatar</span>
+                <p style={{ fontSize:11,color:'#4B5563',marginTop:2,fontFamily:F }}>Colochos, calvos, animales y más 👇</p>
+              </div>
               <IBtn onClick={()=>setShowAvatar(false)}><X style={{ width:14,height:14 }}/></IBtn>
             </div>
-            <div style={{ display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:7 }}>
-              {AVATARS.map(e=>(
+
+            {/* Colochos / cabello */}
+            <p style={{ fontSize:10,fontWeight:700,color:'#4B5563',letterSpacing:1.5,textTransform:'uppercase',marginBottom:6,fontFamily:F }}>Cabello</p>
+            <div style={{ display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:6,marginBottom:12 }}>
+              {['🧑‍🦱','👨‍🦱','👩‍🦱','🧑‍🦲','👨‍🦲','👩‍🦲','🧑‍🦰','👨‍🦰','👩‍🦰','🧑‍🦳','👨‍🦳','👩‍🦳'].map(e=>(
                 <button key={e} onClick={()=>{setAvatar(currentUser,e);setAvatarState(e);setShowAvatar(false);}}
-                  style={{ fontSize:24,padding:'7px',borderRadius:9,border:`2px solid ${avatar===e?ORANGE:'rgba(255,255,255,0.07)'}`,backgroundColor:avatar===e?'rgba(249,115,22,0.12)':'rgba(255,255,255,0.02)',cursor:'pointer',WebkitAppearance:'none' }}>
+                  style={{ fontSize:26,padding:'7px',borderRadius:9,border:`2px solid ${avatar===e?ORANGE:'rgba(255,255,255,0.07)'}`,backgroundColor:avatar===e?'rgba(249,115,22,0.12)':'rgba(255,255,255,0.02)',cursor:'pointer',WebkitAppearance:'none',lineHeight:1 }}>
+                  {e}
+                </button>
+              ))}
+            </div>
+
+            {/* Caras locas */}
+            <p style={{ fontSize:10,fontWeight:700,color:'#4B5563',letterSpacing:1.5,textTransform:'uppercase',marginBottom:6,fontFamily:F }}>Caras</p>
+            <div style={{ display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:6,marginBottom:12 }}>
+              {['🤠','🥸','😎','🤡','🥴','🤪','😜','🫠','😵‍💫','🤯','🥵','🤬','😤','🤓'].map(e=>(
+                <button key={e} onClick={()=>{setAvatar(currentUser,e);setAvatarState(e);setShowAvatar(false);}}
+                  style={{ fontSize:26,padding:'7px',borderRadius:9,border:`2px solid ${avatar===e?ORANGE:'rgba(255,255,255,0.07)'}`,backgroundColor:avatar===e?'rgba(249,115,22,0.12)':'rgba(255,255,255,0.02)',cursor:'pointer',WebkitAppearance:'none',lineHeight:1 }}>
+                  {e}
+                </button>
+              ))}
+            </div>
+
+            {/* Personajes */}
+            <p style={{ fontSize:10,fontWeight:700,color:'#4B5563',letterSpacing:1.5,textTransform:'uppercase',marginBottom:6,fontFamily:F }}>Personajes</p>
+            <div style={{ display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:6,marginBottom:12 }}>
+              {['🧙','🥷','👾','🤖','👽','💀','🎃','🧛','🧟','🧜','🧝','🫅','🤴','👸'].map(e=>(
+                <button key={e} onClick={()=>{setAvatar(currentUser,e);setAvatarState(e);setShowAvatar(false);}}
+                  style={{ fontSize:26,padding:'7px',borderRadius:9,border:`2px solid ${avatar===e?ORANGE:'rgba(255,255,255,0.07)'}`,backgroundColor:avatar===e?'rgba(249,115,22,0.12)':'rgba(255,255,255,0.02)',cursor:'pointer',WebkitAppearance:'none',lineHeight:1 }}>
+                  {e}
+                </button>
+              ))}
+            </div>
+
+            {/* Animales */}
+            <p style={{ fontSize:10,fontWeight:700,color:'#4B5563',letterSpacing:1.5,textTransform:'uppercase',marginBottom:6,fontFamily:F }}>Animales</p>
+            <div style={{ display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:6 }}>
+              {['🐸','🦊','🐙','🦄','🦁','🐯','🐻','🐼','🐷','🦝','🦆','🐧','🦖','🦔','🦦','🐨','🦥'].map(e=>(
+                <button key={e} onClick={()=>{setAvatar(currentUser,e);setAvatarState(e);setShowAvatar(false);}}
+                  style={{ fontSize:26,padding:'7px',borderRadius:9,border:`2px solid ${avatar===e?ORANGE:'rgba(255,255,255,0.07)'}`,backgroundColor:avatar===e?'rgba(249,115,22,0.12)':'rgba(255,255,255,0.02)',cursor:'pointer',WebkitAppearance:'none',lineHeight:1 }}>
                   {e}
                 </button>
               ))}

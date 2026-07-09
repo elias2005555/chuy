@@ -1,59 +1,20 @@
 import { useOrders, Order } from './OrderContext';
 import { useNavigate } from 'react-router';
 import { ArrowLeft, Clock, CheckCircle, ChefHat, Wifi, WifiOff } from 'lucide-react';
-import { useEffect, useRef, useState, memo } from 'react';
+import { useState, memo } from 'react';
 import logoImg from '../../imports/image-1.png';
-import { ElectricLightning } from './ElectricLightning';
-
-// Mini procedural canvas bolt for card header decoration
-function CardBolt() {
-  const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const c = ref.current; if (!c) return;
-    const ctx = c.getContext('2d')!;
-    const W = 64, H = 96;
-    c.width = W; c.height = H;
-    let raf = 0, nextFire = Date.now() + 600 + Math.random() * 1200;
-    let pts: {x:number;y:number}[] = [], bright = 0, fading = false, fadeStart = 0;
-
-    const sub = (out:{x:number;y:number}[], x1:number,y1:number,x2:number,y2:number,s:number,d:number)=>{
-      if(d===0||s<1){out.push({x:x2,y:y2});return;}
-      const mx=(x1+x2)/2+(Math.random()-0.5)*s, my=(y1+y2)/2+(Math.random()-0.5)*s*0.2;
-      sub(out,x1,y1,mx,my,s*0.55,d-1); sub(out,mx,my,x2,y2,s*0.55,d-1);
-    };
-
-    const frame = () => {
-      const t = Date.now();
-      ctx.clearRect(0,0,W,H);
-      if(!fading && t >= nextFire) {
-        pts=[{x:W*0.6,y:0}]; sub(pts,W*0.6,0,W*0.2,H,18,7);
-        bright=1; fading=false; fadeStart=t+80;
-      }
-      if(t>fadeStart&&!fading&&pts.length>1){fading=true;}
-      if(fading){bright=Math.max(0,1-(t-fadeStart)/200); if(bright===0){pts=[];fading=false;nextFire=t+2500+Math.random()*3500;}}
-      if(pts.length>1){
-        const draw=(lw:number,col:string,al:number,blur:number)=>{
-          ctx.save();ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
-          pts.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));
-          ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.globalAlpha=al*bright;
-          ctx.shadowBlur=blur;ctx.shadowColor='#3B82F6';
-          ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();ctx.restore();
-        };
-        draw(8,'#1E3A8A',0.25,20);draw(3,'#60A5FA',0.6,8);draw(1,'#E8F4FF',0.95,3);
-      }
-      raf=requestAnimationFrame(frame);
-    };
-    raf=requestAnimationFrame(frame);
-    return ()=>cancelAnimationFrame(raf);
-  },[]);
-  return <canvas ref={ref} width={64} height={96} style={{ position:'absolute', right:10, top:0, pointerEvents:'none', userSelect:'none' }}/>;
-}
 
 const F    = "'Inter',-apple-system,sans-serif";
 const MONO = "'JetBrains Mono',monospace";
 const BG   = '#05070A';
 const CARD = '#0C0F15';
 const BORDER = '1px solid rgba(255,255,255,0.07)';
+
+function AvatarImg({ src, size = 28 }: { src: string; size?: number }) {
+  const isUrl = src?.startsWith('http') || src?.startsWith('//');
+  if (isUrl) return <img src={src} alt="" width={size} height={size} style={{ borderRadius:'50%', objectFit:'cover', display:'block' }}/>;
+  return <span style={{ fontSize: size * 0.8, lineHeight:1 }}>{src}</span>;
+}
 
 function elapsed(ts: string) {
   const s = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
@@ -68,16 +29,12 @@ const STATUS_META: Record<string,{label:string;color:string;next:Order['status']
   delivered: { label:'Entregado',   color:'#374151', next:null,       nextLabel:'' },
 };
 
-const OrderTicket = memo(function OrderTicket({ order, onNext, onMarkItem, dimmed }: {
-  order: Order; onNext:()=>void; onMarkItem:(id:string)=>void; dimmed?:boolean;
+const OrderTicket = memo(function OrderTicket({ order, onNext, onMarkItem, dimmed, now }: {
+  order: Order; onNext:()=>void; onMarkItem:(id:string)=>void; dimmed?:boolean; now: number;
 }) {
-  const [time, setTime] = useState(elapsed(order.timestamp));
   const meta = STATUS_META[order.status];
-
-  useEffect(()=>{
-    const id = setInterval(()=>setTime(elapsed(order.timestamp)), 1000);
-    return ()=>clearInterval(id);
-  },[order.timestamp]);
+  const time = elapsed(order.timestamp);
+  void now; // triggers re-render from parent tick
 
   const allDone = order.items.every(i=>order.deliveredItems.includes(i.id));
 
@@ -94,7 +51,6 @@ const OrderTicket = memo(function OrderTicket({ order, onNext, onMarkItem, dimme
     }}>
       {/* Header */}
       <div style={{ backgroundColor:`${meta.color}10`, borderBottom:`1px solid ${meta.color}20`, padding:'14px 18px', display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative', overflow:'hidden' }}>
-        {!dimmed && <CardBolt/>}
         <div>
           <p style={{ fontWeight:900, fontSize:32, color:'#EDF0F4', fontFamily:MONO, lineHeight:1 }}>{order.id}</p>
           <p style={{ fontSize:26, fontWeight:900, color: dimmed ? '#4B5563' : '#EDF0F4', marginTop:7, fontFamily:F, display:'flex', alignItems:'center', gap:8 }}>
@@ -168,6 +124,8 @@ const OrderTicket = memo(function OrderTicket({ order, onNext, onMarkItem, dimme
 export default function KitchenDisplay() {
   const navigate = useNavigate();
   const { orders, updateOrderStatus, markItemReady, connected } = useOrders();
+  const [now, setNow] = useState(Date.now());
+  useState(()=>{ const id = setInterval(()=>setNow(Date.now()),1000); return ()=>clearInterval(id); });
 
   const active    = orders.filter(o=>o.status!=='delivered');
   const delivered = orders.filter(o=>o.status==='delivered');
@@ -182,9 +140,6 @@ export default function KitchenDisplay() {
 
   return (
     <div style={{ minHeight:'100vh', backgroundColor:BG, fontFamily:F, color:'#EDF0F4', position:'relative' }}>
-      {/* Electric lightning background */}
-      <ElectricLightning/>
-
       {/* Header */}
       <header style={{ backgroundColor:CARD, borderBottom:BORDER, padding:'12px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', position:'sticky', top:0, zIndex:10 }}>
         <div style={{ display:'flex', alignItems:'center', gap:12 }}>
@@ -233,7 +188,7 @@ export default function KitchenDisplay() {
           {/* Active orders */}
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:14, alignItems:'start' }}>
             {[...pending,...prep,...ready].map(order=>(
-              <OrderTicket key={order.id} order={order} onNext={()=>handleNext(order)} onMarkItem={id=>markItemReady(order.id,id)}/>
+              <OrderTicket key={order.id} order={order} onNext={()=>handleNext(order)} onMarkItem={id=>markItemReady(order.id,id)} now={now}/>
             ))}
           </div>
 
@@ -245,7 +200,7 @@ export default function KitchenDisplay() {
               </p>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:12, alignItems:'start' }}>
                 {delivered.map(order=>(
-                  <OrderTicket key={order.id} order={order} onNext={()=>{}} onMarkItem={()=>{}} dimmed/>
+                  <OrderTicket key={order.id} order={order} onNext={()=>{}} onMarkItem={()=>{}} dimmed now={now}/>
                 ))}
               </div>
             </div>
