@@ -2,6 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useOrders } from './OrderContext';
 import { ShoppingCart, ChefHat, Wifi, WifiOff, RefreshCw, AlertTriangle, Copy, Check } from 'lucide-react';
+import { ElectricLightning } from './ElectricLightning';
+
+const HOME_STYLE = `
+@keyframes hp-glow-pulse {
+  0%,100% { opacity:0.07; }
+  50%     { opacity:0.14; }
+}
+`;
 
 import logoImg from '../../imports/image-1.png';
 
@@ -15,6 +23,27 @@ grant all on orders to anon;
 grant all on transactions to anon;
 grant usage on schema public to anon;`;
 
+const SCHEMA_SQL = `-- Columnas faltantes en la tabla orders
+alter table orders add column if not exists avatar_emoji text default '';
+alter table orders add column if not exists delivered_items jsonb default '[]';
+alter table orders add column if not exists sent_by text default '';
+alter table orders add column if not exists items jsonb default '[]';
+
+-- Notificar a PostgREST que recargue el schema
+notify pgrst, 'reload schema';`;
+
+function fallbackCopy(text: string, onDone: (v: boolean) => void) {
+  const el = document.createElement('textarea');
+  el.value = text;
+  el.style.position = 'fixed';
+  el.style.opacity = '0';
+  document.body.appendChild(el);
+  el.focus();
+  el.select();
+  try { document.execCommand('copy'); onDone(true); setTimeout(() => onDone(false), 2000); } catch {}
+  document.body.removeChild(el);
+}
+
 function DbErrorBanner({ error }: { error: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -22,10 +51,9 @@ function DbErrorBanner({ error }: { error: string }) {
   const isNoTable = error === 'no_table';
 
   const copy = () => {
-    navigator.clipboard.writeText(FIX_SQL).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    try {
+      navigator.clipboard.writeText(FIX_SQL).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => fallbackCopy(FIX_SQL, setCopied));
+    } catch { fallbackCopy(FIX_SQL, setCopied); }
   };
 
   return (
@@ -67,9 +95,71 @@ function DbErrorBanner({ error }: { error: string }) {
   );
 }
 
+function SchemaBanner({ pendingCount, onTest, testing, testResult, lastWriteError }: {
+  pendingCount: number; onTest: () => void; testing: boolean;
+  testResult: string | null; lastWriteError: string | null;
+}) {
+  const [copied, setCopied] = useState(false);
+  const isColumnError = (lastWriteError || testResult || '').includes('PGRST204') || (lastWriteError || testResult || '').includes('column');
+
+  const copy = () => {
+    try {
+      navigator.clipboard.writeText(SCHEMA_SQL).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => fallbackCopy(SCHEMA_SQL, setCopied));
+    } catch { fallbackCopy(SCHEMA_SQL, setCopied); }
+  };
+
+  return (
+    <div style={{ width:'100%', maxWidth:420, backgroundColor:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.25)', borderRadius:14, padding:'16px', marginBottom:16, fontFamily:F }}>
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+        <AlertTriangle style={{ width:16, height:16, color:'#EF4444', flexShrink:0 }}/>
+        <p style={{ fontSize:14, color:'#EDF0F4', fontWeight:700, flex:1 }}>
+          {pendingCount} pedido{pendingCount !== 1 ? 's' : ''} sin sincronizar
+        </p>
+      </div>
+
+      {isColumnError && (
+        <>
+          <p style={{ fontSize:12, color:'#9AA3B0', marginBottom:10, lineHeight:1.5 }}>
+            Faltan columnas en la tabla <code style={{ color:'#F97316', fontFamily:MONO }}>orders</code>. Corre este SQL en Supabase:
+          </p>
+          <div style={{ position:'relative', backgroundColor:'#060809', borderRadius:8, border:'1px solid rgba(255,255,255,0.06)', padding:'10px 12px', marginBottom:8 }}>
+            <pre style={{ fontSize:10, color:'#9AA3B0', margin:0, whiteSpace:'pre-wrap', fontFamily:MONO, lineHeight:1.6 }}>{SCHEMA_SQL}</pre>
+            <button onClick={copy} style={{ position:'absolute', top:8, right:8, display:'flex', alignItems:'center', gap:4, padding:'4px 8px', borderRadius:6, border:'1px solid rgba(255,255,255,0.1)', backgroundColor:'rgba(255,255,255,0.05)', color:copied?'#22C55E':'#6B7280', fontSize:10, fontWeight:700, cursor:'pointer', WebkitAppearance:'none', fontFamily:MONO }}>
+              {copied ? <Check style={{ width:10, height:10 }}/> : <Copy style={{ width:10, height:10 }}/>}
+              {copied ? 'Copiado' : 'Copiar'}
+            </button>
+          </div>
+          <p style={{ fontSize:11, color:'#4B5563', marginBottom:10 }}>
+            Supabase → <strong style={{ color:'#6B7280' }}>SQL Editor</strong> → pegar → <strong style={{ color:'#6B7280' }}>Run</strong>
+          </p>
+        </>
+      )}
+
+      <button onClick={onTest} disabled={testing} style={{ width:'100%', padding:'9px', borderRadius:8, border:'1px solid rgba(239,68,68,0.25)', backgroundColor:'rgba(239,68,68,0.08)', color:'#EF4444', fontWeight:700, fontSize:12, cursor:testing?'not-allowed':'pointer', WebkitAppearance:'none', fontFamily:MONO, marginBottom: testResult ? 8 : 0 }}>
+        {testing ? 'Probando...' : '⚡ Probar escritura'}
+      </button>
+      {testResult && (
+        <pre style={{ fontSize:11, color: testResult.startsWith('OK') ? '#22C55E' : '#EF4444', background:'rgba(0,0,0,0.4)', borderRadius:7, padding:'10px 12px', margin:0, whiteSpace:'pre-wrap', wordBreak:'break-all', fontFamily:MONO, lineHeight:1.5 }}>
+          {testResult}
+        </pre>
+      )}
+    </div>
+  );
+}
+
 export default function HomePage() {
   const navigate = useNavigate();
-  const { connected, orders, reconnect, dbError, pendingCount } = useOrders();
+  const { connected, orders, reconnect, dbError, pendingCount, lastWriteError, testWrite } = useOrders();
+  const [testResult, setTestResult] = useState<string | null>(null);
+  const [testing, setTesting] = useState(false);
+
+  const handleTest = async () => {
+    setTesting(true);
+    setTestResult(null);
+    const result = await testWrite();
+    setTestResult(result);
+    setTesting(false);
+  };
   const [taps, setTaps] = useState(0);
   const [reconnecting, setReconnecting] = useState(false);
 
@@ -91,10 +181,16 @@ export default function HomePage() {
 
   return (
     <div style={{ minHeight:'100vh', backgroundColor:'#07090D', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'32px 20px', fontFamily:F, position:'relative', overflow:'hidden' }}>
+      <style>{HOME_STYLE}</style>
+
+      {/* Electric lightning */}
+      <ElectricLightning/>
+
       {/* Grid bg */}
       <div style={{ position:'absolute', inset:0, pointerEvents:'none', backgroundImage:'linear-gradient(rgba(249,115,22,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(249,115,22,0.03) 1px,transparent 1px)', backgroundSize:'44px 44px' }}/>
-      {/* Radial glow */}
-      <div style={{ position:'absolute', top:'28%', left:'50%', transform:'translateX(-50%)', width:500, height:500, borderRadius:'50%', background:'radial-gradient(circle,rgba(249,115,22,0.07) 0%,transparent 70%)', pointerEvents:'none' }}/>
+
+      {/* Radial glow animated */}
+      <div style={{ position:'absolute', top:'25%', left:'50%', transform:'translateX(-50%)', width:600, height:600, borderRadius:'50%', background:'radial-gradient(circle,rgba(249,115,22,0.09) 0%,transparent 65%)', pointerEvents:'none', animation:'hp-glow-pulse 4s ease-in-out infinite' }}/>
 
       {/* Logo */}
       <div onClick={handleLogoTap} style={{ marginBottom:32, cursor:'pointer', userSelect:'none', position:'relative' }}>
@@ -117,14 +213,15 @@ export default function HomePage() {
       {/* DB error banner */}
       {dbError && <DbErrorBanner error={dbError} />}
 
-      {/* Pending sync warning — shows even without dbError */}
+      {/* Pending sync warning */}
       {!dbError && connected && pendingCount > 0 && (
-        <div style={{ width:'100%', maxWidth:420, backgroundColor:'rgba(251,191,36,0.06)', border:'1px solid rgba(251,191,36,0.25)', borderRadius:12, padding:'13px 16px', marginBottom:16, display:'flex', alignItems:'center', gap:10 }}>
-          <AlertTriangle style={{ width:16, height:16, color:'#FBBF24', flexShrink:0 }}/>
-          <p style={{ fontSize:13, color:'#D97706', fontWeight:600, fontFamily:F }}>
-            {pendingCount} pedido{pendingCount !== 1 ? 's' : ''} sin sincronizar — las escrituras a Supabase están fallando
-          </p>
-        </div>
+        <SchemaBanner
+          pendingCount={pendingCount}
+          onTest={handleTest}
+          testing={testing}
+          testResult={testResult}
+          lastWriteError={lastWriteError}
+        />
       )}
 
       {/* Status */}

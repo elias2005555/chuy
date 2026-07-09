@@ -53,6 +53,8 @@ interface OrderContextType {
   closeDayAndClean: (date: string) => Promise<void>;
   cleanOldOrders: () => Promise<number>;
   reconnect: () => Promise<void>;
+  lastWriteError: string | null;
+  testWrite: () => Promise<string>;
 }
 
 const Ctx = createContext<OrderContextType | undefined>(undefined);
@@ -94,32 +96,37 @@ function loadQ(): QOp[] { try { return JSON.parse(localStorage.getItem(Q_KEY) ||
 function saveQ(q: QOp[]) { try { localStorage.setItem(Q_KEY, JSON.stringify(q)); } catch {} }
 function enq(op: QOp) { const q = loadQ(); q.push(op); saveQ(q); }
 
-async function flushQ(): Promise<{ remaining: number; permissionError: boolean }> {
+async function flushQ(): Promise<{ remaining: number; permissionError: boolean; lastError: string | null }> {
   const q = loadQ();
-  if (!q.length) return { remaining: 0, permissionError: false };
+  if (!q.length) return { remaining: 0, permissionError: false, lastError: null };
   const failed: QOp[] = [];
   let permissionError = false;
+  let lastError: string | null = null;
   for (const op of q) {
     try {
       let res: { error: any } | null = null;
-      if (op.t === 'upsert_order')       res = await supabase.from('orders').upsert([op.d]);
+      if (op.t === 'upsert_order')       res = await supabase.from('orders').upsert([op.d], { onConflict: 'id' });
       else if (op.t === 'update_order')   res = await supabase.from('orders').update(op.patch).eq('id', op.id);
       else if (op.t === 'delete_order')   res = await supabase.from('orders').delete().eq('id', op.id);
-      else if (op.t === 'upsert_tx')      res = await supabase.from('transactions').upsert([op.d]);
+      else if (op.t === 'upsert_tx')      res = await supabase.from('transactions').upsert([op.d], { onConflict: 'id' });
       else if (op.t === 'delete_tx')      res = await supabase.from('transactions').delete().eq('id', (op as any).id);
       else if (op.t === 'delete_tx_desc') res = await supabase.from('transactions').delete().eq('description', (op as any).desc);
       else if (op.t === 'update_tx_amt')  res = await supabase.from('transactions').update({ amount: (op as any).amount }).eq('id', (op as any).id);
       if (res?.error) {
         failed.push(op);
         const msg = (res.error.message || res.error.code || '').toLowerCase();
+        lastError = `[${op.t}] ${res.error.code}: ${res.error.message}`;
         if (msg.includes('permission') || msg.includes('42501') || msg.includes('denied') || msg.includes('privilege') || msg.includes('policy')) {
           permissionError = true;
         }
       }
-    } catch { failed.push(op); }
+    } catch (e: any) {
+      failed.push(op);
+      lastError = `[${op.t}] catch: ${e?.message}`;
+    }
   }
   saveQ(failed);
-  return { remaining: failed.length, permissionError };
+  return { remaining: failed.length, permissionError, lastError };
 }
 
 export function OrderProvider({ children }: { children: ReactNode }) {
@@ -128,6 +135,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const [connected, setConnected] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [dbError, setDbError] = useState<string | null>(null);
+  const [lastWriteError, setLastWriteError] = useState<string | null>(null);
   const writeFailRef = useRef(0); // consecutive poll cycles where queue didn't shrink
 
   const ordersRef = useRef<Order[]>([]);
@@ -251,8 +259,9 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       apply(ls, false);
       ordersRef.current = ls.orders;
       txRef.current = ls.transactions;
-      const { remaining: q0, permissionError: pe0 } = await flushQ();
+      const { remaining: q0, permissionError: pe0, lastError: le0 } = await flushQ();
       setPendingCount(q0);
+      if (le0) setLastWriteError(le0);
       if (pe0) setDbError('rls');
       // Reduced retries from 4 to 3, keeping 1.5s gap
       for (let i = 0; i < 3; i++) {
@@ -267,20 +276,20 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     pollRef.current = setInterval(async () => {
       const prevLen = loadQ().length;
-      const { remaining, permissionError } = await flushQ();
+      const { remaining, permissionError, lastError } = await flushQ();
       setPendingCount(remaining);
+      if (lastError) setLastWriteError(lastError);
 
       if (permissionError) {
         setDbError('rls');
         writeFailRef.current = 99;
       } else if (remaining > 0 && remaining >= prevLen && prevLen > 0) {
-        // Queue not shrinking — writes failing (no specific error code caught)
         writeFailRef.current++;
-        if (writeFailRef.current >= 3) setDbError('rls');
+        if (writeFailRef.current >= 3) setDbError('write_fail');
       } else if (remaining === 0) {
         writeFailRef.current = 0;
-        // Only clear write-type errors when queue is empty
-        setDbError(prev => (prev === 'rls' ? null : prev));
+        setLastWriteError(null);
+        setDbError(prev => (prev === 'rls' || prev === 'write_fail' ? null : prev));
       }
 
       const ok = await fetchAll();
@@ -539,6 +548,27 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     setOrders(prev => { const u = prev.filter(o => !o.timestamp.startsWith(date)); saveLS({ orders: u, transactions: txRef.current }); return u; });
   }, []);
 
+  const testWrite = useCallback(async (): Promise<string> => {
+    const testId = 'test-' + Date.now();
+    try {
+      // Try insert into orders
+      const ins = await supabase.from('orders').insert([{
+        id: testId, items: [], total: 0,
+        timestamp: new Date().toISOString(),
+        status: 'pending', delivered_items: [],
+        sent_by: 'test', avatar_emoji: '',
+      }]);
+      if (!ins.error) {
+        // Clean up the test row
+        await supabase.from('orders').delete().eq('id', testId);
+        return 'OK — escritura exitosa ✓';
+      }
+      return `INSERT error: ${ins.error.code} — ${ins.error.message}\nDetails: ${ins.error.details || ''}\nHint: ${ins.error.hint || ''}`;
+    } catch (e: any) {
+      return `Exception: ${e?.message}`;
+    }
+  }, []);
+
   const reconnect = useCallback(async () => {
     setConnected(false);
     realtimeConnectedRef.current = false;
@@ -574,7 +604,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       addOrder, addItemsToOrder, updateOrderStatus, markItemReady,
       deleteOrder, addTransaction, deleteTransaction,
       getTotalSales, getTotalExpenses, getOtherIncome, getNetProfit,
-      buildDailySummary, closeDayAndClean, cleanOldOrders, reconnect,
+      buildDailySummary, closeDayAndClean, cleanOldOrders, reconnect, lastWriteError, testWrite,
     }}>
       {children}
     </Ctx.Provider>

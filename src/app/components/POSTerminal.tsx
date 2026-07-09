@@ -12,7 +12,7 @@ const KITCHEN_CATS = new Set(['Desayunos','Golosinas','Platos Fuertes']);
 const AUTO_CATS    = new Set(['Bebidas','Chucherías','Helados']);
 const DRINKS       = MENU_ITEMS.filter(i => i.category === 'Bebidas');
 
-const AVATARS = ['🍕','🌮','🍔','🍜','🌯','🥗','🍱','🧆','🥙','🍛','🌶️','🍖','🥩','🍟','🧇'];
+const AVATARS = ['🤠','🥸','😎','🤡','👹','🐸','🦊','🐙','🦄','🤖','👽','🧙','🥷','🦁','🐯','🐻','🐼','🐷','🦝','🦆','🐧','🦖','👾','💀','🎃'];
 const USERS = [
   { username:'Quedadito1', password:'eliaselmejor' },
   { username:'Quedadito2', password:'eliaselmejor' },
@@ -205,31 +205,31 @@ function OrderCard({ order, onDeliver, onPay, onMarkItem }: { order:Order; onDel
           {LABELS[order.status]}
         </span>
       </div>
-      <div style={{ padding:'8px 10px', display:'flex', flexDirection:'column', gap:4 }}>
+      <div style={{ padding:'9px 11px', display:'flex', flexDirection:'column', gap:5 }}>
         {order.items.map(item => {
           const done = order.deliveredItems.includes(item.id);
           return (
-            <button key={item.id} onClick={()=>onMarkItem(item.id)} style={{ width:'100%', display:'flex', alignItems:'center', gap:9, padding:'9px 11px', borderRadius:8, border:`1px solid ${done?'rgba(34,197,94,0.2)':'rgba(255,255,255,0.04)'}`, backgroundColor:done?'rgba(34,197,94,0.05)':'rgba(255,255,255,0.02)', cursor:'pointer', WebkitAppearance:'none', textAlign:'left' }}>
-              <div style={{ width:18, height:18, borderRadius:5, flexShrink:0, backgroundColor:done?'#22C55E':'transparent', border:`1.5px solid ${done?'#22C55E':'rgba(255,255,255,0.12)'}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                {done&&<span style={{ color:'#FFF', fontSize:10, fontWeight:900 }}>✓</span>}
+            <button key={item.id} onClick={()=>onMarkItem(item.id)} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'11px 13px', borderRadius:9, border:`1px solid ${done?'rgba(34,197,94,0.2)':'rgba(255,255,255,0.04)'}`, backgroundColor:done?'rgba(34,197,94,0.05)':'rgba(255,255,255,0.02)', cursor:'pointer', WebkitAppearance:'none', textAlign:'left' }}>
+              <div style={{ width:22, height:22, borderRadius:6, flexShrink:0, backgroundColor:done?'#22C55E':'transparent', border:`2px solid ${done?'#22C55E':'rgba(255,255,255,0.12)'}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                {done&&<span style={{ color:'#FFF', fontSize:11, fontWeight:900 }}>✓</span>}
               </div>
-              <span style={{ flex:1, fontSize:14, color:done?'#374151':'#EDF0F4', textDecoration:done?'line-through':'none', fontFamily:F }}>{item.quantity}× {item.name}</span>
-              <span style={{ fontSize:13, fontWeight:700, color:ORANGE, fontFamily:MONO }}>L.{(item.price*item.quantity).toFixed(2)}</span>
+              <span style={{ flex:1, fontSize:16, fontWeight:600, color:done?'#374151':'#EDF0F4', textDecoration:done?'line-through':'none', fontFamily:F }}>{item.quantity}× {item.name}</span>
+              <span style={{ fontSize:15, fontWeight:800, color:ORANGE, fontFamily:MONO }}>L.{(item.price*item.quantity).toFixed(2)}</span>
             </button>
           );
         })}
       </div>
-      <div style={{ padding:'11px 14px', borderTop:'1px solid rgba(255,255,255,0.04)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <span style={{ fontSize:17, fontWeight:800, color:ORANGE, fontFamily:MONO }}>L.{order.total.toFixed(2)}</span>
+      <div style={{ padding:'13px 15px', borderTop:'1px solid rgba(255,255,255,0.04)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <span style={{ fontSize:20, fontWeight:900, color:ORANGE, fontFamily:MONO }}>L.{order.total.toFixed(2)}</span>
         {order.status!=='delivered' ? (
-          <div style={{ display:'flex', gap:7 }}>
-            <button onClick={onDeliver} style={{ padding:'9px 15px', borderRadius:8, border:BORDER, backgroundColor:CARD2, color:'#6B7280', fontWeight:600, fontSize:13, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>Entregar</button>
-            <button onClick={onPay} style={{ padding:'9px 16px', borderRadius:8, border:'none', backgroundColor:ORANGE, color:'#FFF', fontWeight:700, fontSize:13, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>Cobrar</button>
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={onDeliver} style={{ padding:'11px 18px', borderRadius:9, border:BORDER, backgroundColor:CARD2, color:'#9AA3B0', fontWeight:700, fontSize:14, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>Entregar</button>
+            <button onClick={onPay} style={{ padding:'11px 20px', borderRadius:9, border:'none', backgroundColor:ORANGE, color:'#FFF', fontWeight:800, fontSize:15, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>Cobrar</button>
           </div>
         ) : (
-          <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-            <CheckCircle style={{ width:14, height:14, color:'#22C55E' }}/>
-            <span style={{ fontSize:13, color:'#374151', fontFamily:F }}>Completado</span>
+          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+            <CheckCircle style={{ width:15, height:15, color:'#22C55E' }}/>
+            <span style={{ fontSize:14, color:'#374151', fontFamily:F }}>Completado</span>
           </div>
         )}
       </div>
@@ -273,20 +273,20 @@ function CustomModal({ onAdd, onClose }: { onAdd:(i:{name:string;price:number;ca
 // ─── Cart Item ────────────────────────────────────────────────────────────────
 function CartItem({ item, onRemove, onQty }: { item:OrderItem; onRemove:(id:string)=>void; onQty:(id:string,q:number)=>void }) {
   return (
-    <div style={{ backgroundColor:CARD2, border:BORDER, borderRadius:10, padding:'10px 11px' }}>
-      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:8, gap:8 }}>
-        <p style={{ fontSize:14, fontWeight:600, color:'#EDF0F4', flex:1, lineHeight:1.4, fontFamily:F }}>{item.name}</p>
-        <button onClick={()=>onRemove(item.id)} style={{ width:24, height:24, borderRadius:6, backgroundColor:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.18)', color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', WebkitAppearance:'none', flexShrink:0 }}>
-          <Trash2 style={{ width:11, height:11 }}/>
+    <div style={{ backgroundColor:CARD2, border:BORDER, borderRadius:10, padding:'11px 12px' }}>
+      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:9, gap:8 }}>
+        <p style={{ fontSize:16, fontWeight:700, color:'#EDF0F4', flex:1, lineHeight:1.4, fontFamily:F }}>{item.name}</p>
+        <button onClick={()=>onRemove(item.id)} style={{ width:27, height:27, borderRadius:7, backgroundColor:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.18)', color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', WebkitAppearance:'none', flexShrink:0 }}>
+          <Trash2 style={{ width:12, height:12 }}/>
         </button>
       </div>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <div style={{ display:'flex', alignItems:'center', border:BORDER, borderRadius:7, overflow:'hidden' }}>
-          <button onClick={()=>onQty(item.id,item.quantity-1)} style={{ width:28,height:28,backgroundColor:'rgba(255,255,255,0.03)',border:'none',color:'#EDF0F4',fontWeight:900,fontSize:15,cursor:'pointer',WebkitAppearance:'none' }}>−</button>
-          <span style={{ width:28,textAlign:'center',fontSize:15,fontWeight:700,color:'#EDF0F4',fontFamily:MONO }}>{item.quantity}</span>
-          <button onClick={()=>onQty(item.id,item.quantity+1)} style={{ width:30,height:30,backgroundColor:'rgba(255,255,255,0.03)',border:'none',color:'#EDF0F4',fontWeight:900,fontSize:16,cursor:'pointer',WebkitAppearance:'none' }}>+</button>
+        <div style={{ display:'flex', alignItems:'center', border:BORDER, borderRadius:8, overflow:'hidden' }}>
+          <button onClick={()=>onQty(item.id,item.quantity-1)} style={{ width:32,height:32,backgroundColor:'rgba(255,255,255,0.03)',border:'none',color:'#EDF0F4',fontWeight:900,fontSize:18,cursor:'pointer',WebkitAppearance:'none' }}>−</button>
+          <span style={{ width:32,textAlign:'center',fontSize:17,fontWeight:800,color:'#EDF0F4',fontFamily:MONO }}>{item.quantity}</span>
+          <button onClick={()=>onQty(item.id,item.quantity+1)} style={{ width:32,height:32,backgroundColor:'rgba(255,255,255,0.03)',border:'none',color:'#EDF0F4',fontWeight:900,fontSize:18,cursor:'pointer',WebkitAppearance:'none' }}>+</button>
         </div>
-        <span style={{ fontSize:15,fontWeight:800,color:ORANGE,fontFamily:MONO }}>L.{(item.price*item.quantity).toFixed(2)}</span>
+        <span style={{ fontSize:18,fontWeight:900,color:ORANGE,fontFamily:MONO }}>L.{(item.price*item.quantity).toFixed(2)}</span>
       </div>
     </div>
   );
@@ -450,18 +450,18 @@ export default function POSTerminal() {
         {cart.length===0 ? (
           <div style={{ display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'100%',gap:10 }}>
             <ShoppingCart style={{ width:32,height:32,color:'#1F2937' }}/>
-            <p style={{ color:'#374151',fontSize:12,fontFamily:F }}>Carrito vacío</p>
+            <p style={{ color:'#374151',fontSize:14,fontFamily:F }}>Carrito vacío</p>
           </div>
         ) : cart.map(i=><CartItem key={i.id} item={i} onRemove={removeFromCart} onQty={updateQty}/>)}
       </div>
 
       <div style={{ padding:'10px',borderTop:BORDER,flexShrink:0 }}>
-        <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:9,padding:'9px 13px',backgroundColor:'rgba(249,115,22,0.07)',borderRadius:9,border:'1px solid rgba(249,115,22,0.14)' }}>
-          <span style={{ fontSize:13,fontWeight:600,color:'#6B7280',fontFamily:F }}>Total</span>
-          <span style={{ fontSize:22,fontWeight:800,color:ORANGE,fontFamily:MONO }}>L.{cartTotal.toFixed(2)}</span>
+        <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:9,padding:'11px 14px',backgroundColor:'rgba(249,115,22,0.07)',borderRadius:10,border:'1px solid rgba(249,115,22,0.14)' }}>
+          <span style={{ fontSize:15,fontWeight:700,color:'#6B7280',fontFamily:F }}>Total</span>
+          <span style={{ fontSize:26,fontWeight:900,color:ORANGE,fontFamily:MONO }}>L.{cartTotal.toFixed(2)}</span>
         </div>
-        <button onClick={sendToKitchen} disabled={cart.length===0} style={{ width:'100%',padding:'12px',borderRadius:10,border:'none',backgroundColor:cart.length>0?ORANGE:'rgba(249,115,22,0.1)',color:cart.length>0?'#FFF':'#374151',fontWeight:700,fontSize:13,cursor:cart.length>0?'pointer':'not-allowed',WebkitAppearance:'none',display:'flex',alignItems:'center',justifyContent:'center',gap:7,fontFamily:F }}>
-          <Send style={{ width:14,height:14 }}/> Enviar a cocina
+        <button onClick={sendToKitchen} disabled={cart.length===0} style={{ width:'100%',padding:'14px',borderRadius:10,border:'none',backgroundColor:cart.length>0?ORANGE:'rgba(249,115,22,0.1)',color:cart.length>0?'#FFF':'#374151',fontWeight:800,fontSize:15,cursor:cart.length>0?'pointer':'not-allowed',WebkitAppearance:'none',display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontFamily:F }}>
+          <Send style={{ width:16,height:16 }}/> Enviar a cocina
         </button>
       </div>
     </div>
@@ -543,16 +543,16 @@ export default function POSTerminal() {
 
               {/* Menu grid */}
               <div style={{ flex:1,overflowY:'auto',padding:'10px' }}>
-                <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(115px,1fr))',gap:7 }}>
+                <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:8 }}>
                   {filtered.map((item,i)=>(
-                    <button key={i} onClick={()=>addToCart(item)} style={{ backgroundColor:CARD,border:BORDER,borderRadius:11,padding:'13px 11px',cursor:'pointer',WebkitAppearance:'none',textAlign:'left',minHeight:76,display:'flex',flexDirection:'column',justifyContent:'space-between',transition:'border-color 0.12s' }}>
-                      <p style={{ fontSize:13,fontWeight:600,color:'#EDF0F4',lineHeight:1.35,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as const,fontFamily:F }}>{item.name}</p>
-                      <p style={{ fontSize:16,fontWeight:800,color:ORANGE,marginTop:6,fontFamily:MONO }}>L.{item.price}</p>
+                    <button key={i} onClick={()=>addToCart(item)} style={{ backgroundColor:CARD,border:BORDER,borderRadius:12,padding:'15px 13px',cursor:'pointer',WebkitAppearance:'none',textAlign:'left',minHeight:88,display:'flex',flexDirection:'column',justifyContent:'space-between',transition:'border-color 0.12s' }}>
+                      <p style={{ fontSize:16,fontWeight:700,color:'#EDF0F4',lineHeight:1.35,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as const,fontFamily:F }}>{item.name}</p>
+                      <p style={{ fontSize:19,fontWeight:900,color:ORANGE,marginTop:8,fontFamily:MONO }}>L.{item.price}</p>
                     </button>
                   ))}
-                  <button onClick={()=>setShowCustom(true)} style={{ backgroundColor:'rgba(249,115,22,0.04)',border:'1px dashed rgba(249,115,22,0.2)',borderRadius:11,padding:'12px 10px',cursor:'pointer',WebkitAppearance:'none',minHeight:66,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:5 }}>
-                    <Plus style={{ width:16,height:16,color:ORANGE }}/>
-                    <p style={{ fontSize:10,fontWeight:700,color:ORANGE,fontFamily:F }}>Otro</p>
+                  <button onClick={()=>setShowCustom(true)} style={{ backgroundColor:'rgba(249,115,22,0.04)',border:'1px dashed rgba(249,115,22,0.2)',borderRadius:12,padding:'14px 10px',cursor:'pointer',WebkitAppearance:'none',minHeight:80,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:5 }}>
+                    <Plus style={{ width:18,height:18,color:ORANGE }}/>
+                    <p style={{ fontSize:13,fontWeight:700,color:ORANGE,fontFamily:F }}>Otro</p>
                   </button>
                 </div>
               </div>
