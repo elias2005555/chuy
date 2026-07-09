@@ -39,6 +39,7 @@ interface BCMsg { type: 'STATE'; state: AppState; from: string }
 interface OrderContextType {
   orders: Order[]; transactions: Transaction[];
   connected: boolean; pendingCount: number;
+  dbError: string | null;
   addOrder: (o: Omit<Order, 'deliveredItems'>) => void;
   addItemsToOrder: (id: string, items: OrderItem[]) => void;
   updateOrderStatus: (id: string, status: Order['status']) => void;
@@ -93,25 +94,32 @@ function loadQ(): QOp[] { try { return JSON.parse(localStorage.getItem(Q_KEY) ||
 function saveQ(q: QOp[]) { try { localStorage.setItem(Q_KEY, JSON.stringify(q)); } catch {} }
 function enq(op: QOp) { const q = loadQ(); q.push(op); saveQ(q); }
 
-async function flushQ(): Promise<number> {
+async function flushQ(): Promise<{ remaining: number; permissionError: boolean }> {
   const q = loadQ();
-  if (!q.length) return 0;
+  if (!q.length) return { remaining: 0, permissionError: false };
   const failed: QOp[] = [];
+  let permissionError = false;
   for (const op of q) {
     try {
-      let ok = false;
-      if (op.t === 'upsert_order')     ok = !(await supabase.from('orders').upsert([op.d])).error;
-      else if (op.t === 'update_order') ok = !(await supabase.from('orders').update(op.patch).eq('id', op.id)).error;
-      else if (op.t === 'delete_order') ok = !(await supabase.from('orders').delete().eq('id', op.id)).error;
-      else if (op.t === 'upsert_tx')    ok = !(await supabase.from('transactions').upsert([op.d])).error;
-      else if (op.t === 'delete_tx')    ok = !(await supabase.from('transactions').delete().eq('id', (op as any).id)).error;
-      else if (op.t === 'delete_tx_desc') ok = !(await supabase.from('transactions').delete().eq('description', (op as any).desc)).error;
-      else if (op.t === 'update_tx_amt')  ok = !(await supabase.from('transactions').update({ amount: (op as any).amount }).eq('id', (op as any).id)).error;
-      if (!ok) failed.push(op);
+      let res: { error: any } | null = null;
+      if (op.t === 'upsert_order')       res = await supabase.from('orders').upsert([op.d]);
+      else if (op.t === 'update_order')   res = await supabase.from('orders').update(op.patch).eq('id', op.id);
+      else if (op.t === 'delete_order')   res = await supabase.from('orders').delete().eq('id', op.id);
+      else if (op.t === 'upsert_tx')      res = await supabase.from('transactions').upsert([op.d]);
+      else if (op.t === 'delete_tx')      res = await supabase.from('transactions').delete().eq('id', (op as any).id);
+      else if (op.t === 'delete_tx_desc') res = await supabase.from('transactions').delete().eq('description', (op as any).desc);
+      else if (op.t === 'update_tx_amt')  res = await supabase.from('transactions').update({ amount: (op as any).amount }).eq('id', (op as any).id);
+      if (res?.error) {
+        failed.push(op);
+        const msg = (res.error.message || res.error.code || '').toLowerCase();
+        if (msg.includes('permission') || msg.includes('42501') || msg.includes('denied') || msg.includes('privilege') || msg.includes('policy')) {
+          permissionError = true;
+        }
+      }
     } catch { failed.push(op); }
   }
   saveQ(failed);
-  return failed.length;
+  return { remaining: failed.length, permissionError };
 }
 
 export function OrderProvider({ children }: { children: ReactNode }) {
@@ -119,6 +127,8 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [connected, setConnected] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [dbError, setDbError] = useState<string | null>(null);
+  const writeFailRef = useRef(0); // consecutive poll cycles where queue didn't shrink
 
   const ordersRef = useRef<Order[]>([]);
   const txRef     = useRef<Transaction[]>([]);
@@ -151,7 +161,6 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   const fetchAll = useCallback(async (): Promise<boolean> => {
     try {
-      // Solo pedir datos de hoy — evita traer miles de registros viejos
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
       const since = todayStart.toISOString();
@@ -160,8 +169,22 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         supabase.from('orders').select('*').gte('timestamp', since).order('timestamp', { ascending: false }),
         supabase.from('transactions').select('*').gte('timestamp', since).order('timestamp', { ascending: false }),
       ]);
-      if (oe || te) return false;
 
+      if (oe || te) {
+        const err = oe || te;
+        // Detectar errores comunes de Supabase
+        const msg = err?.message || err?.code || 'Error desconocido';
+        if (msg.includes('permission') || msg.includes('42501') || msg.includes('RLS') || msg.includes('policy')) {
+          setDbError('rls');
+        } else if (msg.includes('does not exist') || msg.includes('42P01')) {
+          setDbError('no_table');
+        } else {
+          setDbError(msg);
+        }
+        return false;
+      }
+
+      setDbError(null);
       const dbOrders = (od || []).map(fromDb);
       const dbTxs    = (td || []).map((r: any) => ({ ...r, amount: parseFloat(r.amount) }));
 
@@ -179,7 +202,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
       apply({ orders: mergedOrders, transactions: mergedTxs }, true);
       return true;
-    } catch { return false; }
+    } catch (e: any) {
+      setDbError(e?.message || 'Error de red');
+      return false;
+    }
   }, [apply]);
 
   const writeOrder = useCallback(async (op: QOp) => {
@@ -188,7 +214,17 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       if (op.t === 'upsert_order')     err = (await supabase.from('orders').upsert([op.d])).error;
       else if (op.t === 'update_order') err = (await supabase.from('orders').update(op.patch).eq('id', op.id)).error;
       else if (op.t === 'delete_order') err = (await supabase.from('orders').delete().eq('id', op.id)).error;
-      if (err) enq(op);
+      if (err) {
+        enq(op);
+        const msg = (err?.message || err?.code || '').toLowerCase();
+        if (msg.includes('permission') || msg.includes('42501') || msg.includes('policy') || msg.includes('denied') || msg.includes('privilege')) {
+          setDbError('rls');
+        } else if (msg.includes('does not exist') || msg.includes('42p01')) {
+          setDbError('no_table');
+        } else {
+          setDbError(err?.message || 'write_error');
+        }
+      }
     } catch { enq(op); }
     setPendingCount(loadQ().length);
   }, []);
@@ -200,7 +236,11 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       else if (op.t === 'delete_tx')   err = (await supabase.from('transactions').delete().eq('id', (op as any).id)).error;
       else if (op.t === 'delete_tx_desc') err = (await supabase.from('transactions').delete().eq('description', (op as any).desc)).error;
       else if (op.t === 'update_tx_amt')  err = (await supabase.from('transactions').update({ amount: (op as any).amount }).eq('id', (op as any).id)).error;
-      if (err) enq(op);
+      if (err) {
+        enq(op);
+        const msg = err?.message || err?.code || '';
+        if (msg.includes('permission') || msg.includes('42501') || msg.includes('policy')) setDbError('rls');
+      }
     } catch { enq(op); }
     setPendingCount(loadQ().length);
   }, []);
@@ -211,8 +251,9 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       apply(ls, false);
       ordersRef.current = ls.orders;
       txRef.current = ls.transactions;
-      await flushQ();
-      setPendingCount(loadQ().length);
+      const { remaining: q0, permissionError: pe0 } = await flushQ();
+      setPendingCount(q0);
+      if (pe0) setDbError('rls');
       // Reduced retries from 4 to 3, keeping 1.5s gap
       for (let i = 0; i < 3; i++) {
         const ok = await fetchAll();
@@ -225,11 +266,24 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     pollRef.current = setInterval(async () => {
-      const remaining = await flushQ();
+      const prevLen = loadQ().length;
+      const { remaining, permissionError } = await flushQ();
       setPendingCount(remaining);
+
+      if (permissionError) {
+        setDbError('rls');
+        writeFailRef.current = 99;
+      } else if (remaining > 0 && remaining >= prevLen && prevLen > 0) {
+        // Queue not shrinking — writes failing (no specific error code caught)
+        writeFailRef.current++;
+        if (writeFailRef.current >= 3) setDbError('rls');
+      } else if (remaining === 0) {
+        writeFailRef.current = 0;
+        // Only clear write-type errors when queue is empty
+        setDbError(prev => (prev === 'rls' ? null : prev));
+      }
+
       const ok = await fetchAll();
-      // Only mark disconnected from REST failures if Realtime WebSocket is also not connected.
-      // If Realtime is healthy, transient REST failures don't affect the connected indicator.
       if (ok) {
         setConnected(true);
       } else if (!realtimeConnectedRef.current) {
@@ -488,7 +542,8 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const reconnect = useCallback(async () => {
     setConnected(false);
     realtimeConnectedRef.current = false;
-    await flushQ();
+    const { permissionError } = await flushQ();
+    if (permissionError) setDbError('rls');
     const ok = await fetchAll();
     if (ok) setConnected(true);
   }, [fetchAll]);
@@ -515,7 +570,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   return (
     <Ctx.Provider value={{
-      orders, transactions, connected, pendingCount,
+      orders, transactions, connected, pendingCount, dbError,
       addOrder, addItemsToOrder, updateOrderStatus, markItemReady,
       deleteOrder, addTransaction, deleteTransaction,
       getTotalSales, getTotalExpenses, getOtherIncome, getNetProfit,

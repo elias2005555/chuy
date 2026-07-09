@@ -1,15 +1,75 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useOrders } from './OrderContext';
-import { ShoppingCart, ChefHat, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { ShoppingCart, ChefHat, Wifi, WifiOff, RefreshCw, AlertTriangle, Copy, Check } from 'lucide-react';
+
 import logoImg from '../../imports/image-1.png';
 
 const F = "'Inter', -apple-system, sans-serif";
 const MONO = "'JetBrains Mono', monospace";
 
+const FIX_SQL = `-- Pegar en Supabase → SQL Editor → Run
+alter table orders disable row level security;
+alter table transactions disable row level security;
+grant all on orders to anon;
+grant all on transactions to anon;
+grant usage on schema public to anon;`;
+
+function DbErrorBanner({ error }: { error: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const isRls = error === 'rls';
+  const isNoTable = error === 'no_table';
+
+  const copy = () => {
+    navigator.clipboard.writeText(FIX_SQL).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div style={{ width:'100%', maxWidth:420, backgroundColor:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.25)', borderRadius:14, padding:'16px', marginBottom:20, fontFamily:F }}>
+      <div style={{ display:'flex', gap:10, alignItems:'flex-start', marginBottom:12 }}>
+        <AlertTriangle style={{ width:18, height:18, color:'#EF4444', flexShrink:0, marginTop:1 }}/>
+        <div>
+          <p style={{ fontWeight:800, fontSize:14, color:'#EDF0F4', marginBottom:3 }}>
+            {isRls ? 'Sin permiso en la base de datos' : isNoTable ? 'Tablas no encontradas' : 'Error de base de datos'}
+          </p>
+          <p style={{ fontSize:12, color:'#9AA3B0', lineHeight:1.5 }}>
+            {isRls
+              ? 'Supabase bloqueó el acceso. Los pedidos no se sincronizan entre dispositivos.'
+              : isNoTable
+              ? 'Las tablas orders/transactions no existen en tu proyecto Supabase.'
+              : `Error de Supabase: ${error}`}
+          </p>
+        </div>
+      </div>
+
+      {(isRls || isNoTable) && (
+        <>
+          <p style={{ fontSize:11, fontWeight:700, color:'#6B7280', letterSpacing:1, textTransform:'uppercase', marginBottom:6 }}>
+            {isRls ? 'Solución — corre este SQL en Supabase:' : 'Solución — crear tablas primero'}
+          </p>
+          <div style={{ position:'relative', backgroundColor:'#060809', borderRadius:8, border:'1px solid rgba(255,255,255,0.06)', padding:'10px 12px', marginBottom:8 }}>
+            <pre style={{ fontSize:11, color:'#9AA3B0', margin:0, whiteSpace:'pre-wrap', fontFamily:MONO, lineHeight:1.6 }}>{FIX_SQL}</pre>
+            <button onClick={copy} style={{ position:'absolute', top:8, right:8, display:'flex', alignItems:'center', gap:4, padding:'4px 8px', borderRadius:6, border:'1px solid rgba(255,255,255,0.1)', backgroundColor:'rgba(255,255,255,0.05)', color:copied?'#22C55E':'#6B7280', fontSize:10, fontWeight:700, cursor:'pointer', WebkitAppearance:'none', fontFamily:MONO }}>
+              {copied ? <Check style={{ width:10, height:10 }}/> : <Copy style={{ width:10, height:10 }}/>}
+              {copied ? 'Copiado' : 'Copiar'}
+            </button>
+          </div>
+          <p style={{ fontSize:11, color:'#4B5563', lineHeight:1.5 }}>
+            Supabase → tu proyecto → <strong style={{ color:'#6B7280' }}>SQL Editor</strong> → pegar → <strong style={{ color:'#6B7280' }}>Run</strong>
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function HomePage() {
   const navigate = useNavigate();
-  const { connected, orders, reconnect } = useOrders();
+  const { connected, orders, reconnect, dbError, pendingCount } = useOrders();
   const [taps, setTaps] = useState(0);
   const [reconnecting, setReconnecting] = useState(false);
 
@@ -53,6 +113,19 @@ export default function HomePage() {
       {/* Title */}
       <h1 style={{ fontSize:34, fontWeight:900, color:'#EDF0F4', letterSpacing:-0.5, marginBottom:6, textAlign:'center' }}>Don de Chuy</h1>
       <p style={{ fontSize:13, color:'#374151', fontWeight:600, letterSpacing:3, textTransform:'uppercase', marginBottom:28, textAlign:'center' }}>Business · Sistema POS</p>
+
+      {/* DB error banner */}
+      {dbError && <DbErrorBanner error={dbError} />}
+
+      {/* Pending sync warning — shows even without dbError */}
+      {!dbError && connected && pendingCount > 0 && (
+        <div style={{ width:'100%', maxWidth:420, backgroundColor:'rgba(251,191,36,0.06)', border:'1px solid rgba(251,191,36,0.25)', borderRadius:12, padding:'13px 16px', marginBottom:16, display:'flex', alignItems:'center', gap:10 }}>
+          <AlertTriangle style={{ width:16, height:16, color:'#FBBF24', flexShrink:0 }}/>
+          <p style={{ fontSize:13, color:'#D97706', fontWeight:600, fontFamily:F }}>
+            {pendingCount} pedido{pendingCount !== 1 ? 's' : ''} sin sincronizar — las escrituras a Supabase están fallando
+          </p>
+        </div>
+      )}
 
       {/* Status */}
       <div style={{ marginBottom:36, display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
