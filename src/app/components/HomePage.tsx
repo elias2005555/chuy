@@ -44,32 +44,32 @@ export default function HomePage() {
       </div>
 
       {/* Title */}
-      <h1 style={{ fontSize:28, fontWeight:900, color:'#EDF0F4', letterSpacing:-0.5, marginBottom:6, textAlign:'center' }}>Don de Chuy</h1>
-      <p style={{ fontSize:11, color:'#374151', fontWeight:600, letterSpacing:3, textTransform:'uppercase', marginBottom:28, textAlign:'center' }}>Business · Sistema POS</p>
+      <h1 style={{ fontSize:34, fontWeight:900, color:'#EDF0F4', letterSpacing:-0.5, marginBottom:6, textAlign:'center' }}>Don de Chuy</h1>
+      <p style={{ fontSize:13, color:'#374151', fontWeight:600, letterSpacing:3, textTransform:'uppercase', marginBottom:28, textAlign:'center' }}>Business · Sistema POS</p>
 
       {/* Status */}
       <div style={{ marginBottom:36 }}>
-        <div style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:100, backgroundColor:connected?'rgba(34,197,94,0.07)':'rgba(239,68,68,0.07)', border:`1px solid ${connected?'rgba(34,197,94,0.2)':'rgba(239,68,68,0.2)'}` }}>
-          {connected ? <Wifi style={{ width:11, height:11, color:'#22C55E' }}/> : <WifiOff style={{ width:11, height:11, color:'#EF4444' }}/>}
-          <span style={{ fontSize:11, fontWeight:600, color:connected?'#22C55E':'#EF4444', fontFamily:MONO, letterSpacing:1 }}>
+        <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'8px 18px', borderRadius:100, backgroundColor:connected?'rgba(34,197,94,0.07)':'rgba(239,68,68,0.07)', border:`1px solid ${connected?'rgba(34,197,94,0.2)':'rgba(239,68,68,0.2)'}` }}>
+          {connected ? <Wifi style={{ width:14, height:14, color:'#22C55E' }}/> : <WifiOff style={{ width:14, height:14, color:'#EF4444' }}/>}
+          <span style={{ fontSize:13, fontWeight:700, color:connected?'#22C55E':'#EF4444', fontFamily:MONO, letterSpacing:1 }}>
             {connected?'ONLINE':'OFFLINE'}
           </span>
         </div>
       </div>
 
       {/* Nav buttons */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, width:'100%', maxWidth:350, marginBottom:10 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, width:'100%', maxWidth:380, marginBottom:12 }}>
         <NavBtn
           label="Ventana"
           sub="Punto de venta"
-          icon={<ShoppingCart style={{ width:22, height:22, color:'#F97316' }}/>}
+          icon={<ShoppingCart style={{ width:26, height:26, color:'#F97316' }}/>}
           accent="#F97316"
           onClick={() => navigate('/pos')}
         />
         <NavBtn
           label="Cocina"
           sub="Display KDS"
-          icon={<ChefHat style={{ width:22, height:22, color:'#FBBF24' }}/>}
+          icon={<ChefHat style={{ width:26, height:26, color:'#FBBF24' }}/>}
           accent="#FBBF24"
           badge={ready > 0 ? ready : undefined}
           onClick={() => navigate('/kitchen')}
@@ -77,18 +77,18 @@ export default function HomePage() {
       </div>
 
       {active > 0 && (
-        <button onClick={() => navigate('/pos')} style={{ width:'100%', maxWidth:350, backgroundColor:'#0E1117', border:'1px solid rgba(249,115,22,0.18)', borderRadius:10, padding:'11px 16px', cursor:'pointer', WebkitAppearance:'none', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <button onClick={() => navigate('/pos')} style={{ width:'100%', maxWidth:380, backgroundColor:'#0E1117', border:'1px solid rgba(249,115,22,0.18)', borderRadius:12, padding:'13px 18px', cursor:'pointer', WebkitAppearance:'none', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div style={{ display:'flex', alignItems:'center', gap:9 }}>
-            <div style={{ width:7, height:7, borderRadius:'50%', backgroundColor:'#F97316', boxShadow:'0 0 6px #F97316' }}/>
-            <span style={{ fontSize:12, fontWeight:500, color:'#6B7280' }}>
-              <span style={{ color:'#F97316', fontFamily:MONO, fontWeight:700, fontSize:13 }}>{active}</span> pedido{active!==1?'s':''} activo{active!==1?'s':''}
+            <div style={{ width:8, height:8, borderRadius:'50%', backgroundColor:'#F97316', boxShadow:'0 0 6px #F97316' }}/>
+            <span style={{ fontSize:14, fontWeight:500, color:'#6B7280' }}>
+              <span style={{ color:'#F97316', fontFamily:MONO, fontWeight:700, fontSize:15 }}>{active}</span> pedido{active!==1?'s':''} activo{active!==1?'s':''}
             </span>
           </div>
-          <span style={{ color:'#F97316', fontSize:16 }}>›</span>
+          <span style={{ color:'#F97316', fontSize:18 }}>›</span>
         </button>
       )}
 
-      <p style={{ marginTop:44, fontSize:10, color:'#1F2937', fontFamily:MONO, letterSpacing:1.5 }}>DDC POS · v2025</p>
+      <p style={{ marginTop:44, fontSize:11, color:'#1F2937', fontFamily:MONO, letterSpacing:1.5 }}>DDC POS · v2025</p>
     </div>
   );
 }
@@ -112,8 +112,8 @@ function NavBtn({ label, sub, icon, accent, badge, onClick }: {
         {icon}
       </div>
       <div style={{ textAlign:'center' }}>
-        <p style={{ fontWeight:800, fontSize:14, color:'#EDF0F4', letterSpacing:0.5, textTransform:'uppercase' }}>{label}</p>
-        <p style={{ fontSize:10, color:'#4B5563', marginTop:2 }}>{sub}</p>
+        <p style={{ fontWeight:800, fontSize:16, color:'#EDF0F4', letterSpacing:0.5, textTransform:'uppercase' }}>{label}</p>
+        <p style={{ fontSize:12, color:'#4B5563', marginTop:3 }}>{sub}</p>
       </div>
     </button>
   );

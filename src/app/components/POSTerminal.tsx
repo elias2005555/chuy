@@ -205,31 +205,31 @@ function OrderCard({ order, onDeliver, onPay, onMarkItem }: { order:Order; onDel
           {LABELS[order.status]}
         </span>
       </div>
-      <div style={{ padding:'8px 10px', display:'flex', flexDirection:'column', gap:3 }}>
+      <div style={{ padding:'8px 10px', display:'flex', flexDirection:'column', gap:4 }}>
         {order.items.map(item => {
           const done = order.deliveredItems.includes(item.id);
           return (
-            <button key={item.id} onClick={()=>onMarkItem(item.id)} style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'7px 10px', borderRadius:7, border:`1px solid ${done?'rgba(34,197,94,0.2)':'rgba(255,255,255,0.04)'}`, backgroundColor:done?'rgba(34,197,94,0.05)':'rgba(255,255,255,0.02)', cursor:'pointer', WebkitAppearance:'none', textAlign:'left' }}>
-              <div style={{ width:16, height:16, borderRadius:4, flexShrink:0, backgroundColor:done?'#22C55E':'transparent', border:`1.5px solid ${done?'#22C55E':'rgba(255,255,255,0.12)'}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                {done&&<span style={{ color:'#FFF', fontSize:9, fontWeight:900 }}>✓</span>}
+            <button key={item.id} onClick={()=>onMarkItem(item.id)} style={{ width:'100%', display:'flex', alignItems:'center', gap:9, padding:'9px 11px', borderRadius:8, border:`1px solid ${done?'rgba(34,197,94,0.2)':'rgba(255,255,255,0.04)'}`, backgroundColor:done?'rgba(34,197,94,0.05)':'rgba(255,255,255,0.02)', cursor:'pointer', WebkitAppearance:'none', textAlign:'left' }}>
+              <div style={{ width:18, height:18, borderRadius:5, flexShrink:0, backgroundColor:done?'#22C55E':'transparent', border:`1.5px solid ${done?'#22C55E':'rgba(255,255,255,0.12)'}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                {done&&<span style={{ color:'#FFF', fontSize:10, fontWeight:900 }}>✓</span>}
               </div>
-              <span style={{ flex:1, fontSize:12, color:done?'#374151':'#EDF0F4', textDecoration:done?'line-through':'none', fontFamily:F }}>{item.quantity}× {item.name}</span>
-              <span style={{ fontSize:11, fontWeight:700, color:ORANGE, fontFamily:MONO }}>L.{(item.price*item.quantity).toFixed(2)}</span>
+              <span style={{ flex:1, fontSize:14, color:done?'#374151':'#EDF0F4', textDecoration:done?'line-through':'none', fontFamily:F }}>{item.quantity}× {item.name}</span>
+              <span style={{ fontSize:13, fontWeight:700, color:ORANGE, fontFamily:MONO }}>L.{(item.price*item.quantity).toFixed(2)}</span>
             </button>
           );
         })}
       </div>
-      <div style={{ padding:'10px 14px', borderTop:'1px solid rgba(255,255,255,0.04)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-        <span style={{ fontSize:15, fontWeight:800, color:ORANGE, fontFamily:MONO }}>L.{order.total.toFixed(2)}</span>
+      <div style={{ padding:'11px 14px', borderTop:'1px solid rgba(255,255,255,0.04)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <span style={{ fontSize:17, fontWeight:800, color:ORANGE, fontFamily:MONO }}>L.{order.total.toFixed(2)}</span>
         {order.status!=='delivered' ? (
           <div style={{ display:'flex', gap:7 }}>
-            <button onClick={onDeliver} style={{ padding:'7px 13px', borderRadius:8, border:BORDER, backgroundColor:CARD2, color:'#6B7280', fontWeight:600, fontSize:11, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>Entregar</button>
-            <button onClick={onPay} style={{ padding:'7px 14px', borderRadius:8, border:'none', backgroundColor:ORANGE, color:'#FFF', fontWeight:700, fontSize:11, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>Cobrar</button>
+            <button onClick={onDeliver} style={{ padding:'9px 15px', borderRadius:8, border:BORDER, backgroundColor:CARD2, color:'#6B7280', fontWeight:600, fontSize:13, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>Entregar</button>
+            <button onClick={onPay} style={{ padding:'9px 16px', borderRadius:8, border:'none', backgroundColor:ORANGE, color:'#FFF', fontWeight:700, fontSize:13, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>Cobrar</button>
           </div>
         ) : (
           <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-            <CheckCircle style={{ width:13, height:13, color:'#22C55E' }}/>
-            <span style={{ fontSize:11, color:'#374151', fontFamily:F }}>Completado</span>
+            <CheckCircle style={{ width:14, height:14, color:'#22C55E' }}/>
+            <span style={{ fontSize:13, color:'#374151', fontFamily:F }}>Completado</span>
           </div>
         )}
       </div>
@@ -275,7 +275,7 @@ function CartItem({ item, onRemove, onQty }: { item:OrderItem; onRemove:(id:stri
   return (
     <div style={{ backgroundColor:CARD2, border:BORDER, borderRadius:10, padding:'10px 11px' }}>
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:8, gap:8 }}>
-        <p style={{ fontSize:12, fontWeight:600, color:'#EDF0F4', flex:1, lineHeight:1.4, fontFamily:F }}>{item.name}</p>
+        <p style={{ fontSize:14, fontWeight:600, color:'#EDF0F4', flex:1, lineHeight:1.4, fontFamily:F }}>{item.name}</p>
         <button onClick={()=>onRemove(item.id)} style={{ width:24, height:24, borderRadius:6, backgroundColor:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.18)', color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', WebkitAppearance:'none', flexShrink:0 }}>
           <Trash2 style={{ width:11, height:11 }}/>
         </button>
@@ -283,10 +283,10 @@ function CartItem({ item, onRemove, onQty }: { item:OrderItem; onRemove:(id:stri
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div style={{ display:'flex', alignItems:'center', border:BORDER, borderRadius:7, overflow:'hidden' }}>
           <button onClick={()=>onQty(item.id,item.quantity-1)} style={{ width:28,height:28,backgroundColor:'rgba(255,255,255,0.03)',border:'none',color:'#EDF0F4',fontWeight:900,fontSize:15,cursor:'pointer',WebkitAppearance:'none' }}>−</button>
-          <span style={{ width:26,textAlign:'center',fontSize:13,fontWeight:700,color:'#EDF0F4',fontFamily:MONO }}>{item.quantity}</span>
-          <button onClick={()=>onQty(item.id,item.quantity+1)} style={{ width:28,height:28,backgroundColor:'rgba(255,255,255,0.03)',border:'none',color:'#EDF0F4',fontWeight:900,fontSize:15,cursor:'pointer',WebkitAppearance:'none' }}>+</button>
+          <span style={{ width:28,textAlign:'center',fontSize:15,fontWeight:700,color:'#EDF0F4',fontFamily:MONO }}>{item.quantity}</span>
+          <button onClick={()=>onQty(item.id,item.quantity+1)} style={{ width:30,height:30,backgroundColor:'rgba(255,255,255,0.03)',border:'none',color:'#EDF0F4',fontWeight:900,fontSize:16,cursor:'pointer',WebkitAppearance:'none' }}>+</button>
         </div>
-        <span style={{ fontSize:13,fontWeight:800,color:ORANGE,fontFamily:MONO }}>L.{(item.price*item.quantity).toFixed(2)}</span>
+        <span style={{ fontSize:15,fontWeight:800,color:ORANGE,fontFamily:MONO }}>L.{(item.price*item.quantity).toFixed(2)}</span>
       </div>
     </div>
   );
@@ -295,7 +295,7 @@ function CartItem({ item, onRemove, onQty }: { item:OrderItem; onRemove:(id:stri
 // ─── Main POS ─────────────────────────────────────────────────────────────────
 export default function POSTerminal() {
   const navigate = useNavigate();
-  const { addOrder, addItemsToOrder, addTransaction, orders, updateOrderStatus, markItemReady } = useOrders();
+  const { addOrder, addItemsToOrder, addTransaction, orders, updateOrderStatus, markItemReady, deleteOrder } = useOrders();
 
   const [loggedIn,setLoggedIn]       = useState(false);
   const [user,setUser]               = useState('');
@@ -312,6 +312,9 @@ export default function POSTerminal() {
   const [payingId,setPayingId]       = useState<string|null>(null);
   const [payExtras,setPayExtras]     = useState<OrderItem[]>([]);
   const [notif,setNotif]             = useState<string|null>(null);
+  const [selectMode,setSelectMode]   = useState(false);
+  const [selected,setSelected]       = useState<Set<string>>(new Set());
+  const [confirmDel,setConfirmDel]   = useState<'all'|'selected'|null>(null);
 
   const filtered     = useMemo(()=>MENU_ITEMS.filter(i=>i.category===selectedCat),[selectedCat]);
   const activeOrders = orders.filter(o=>o.status!=='delivered');
@@ -360,6 +363,21 @@ export default function POSTerminal() {
     if(payExtras.length>0) addItemsToOrder(payingId,payExtras);
     updateOrderStatus(payingId,'delivered');
     setPayingId(null); setPayExtras([]);
+  };
+
+  const toggleSelect = (id: string) => setSelected(prev => {
+    const n = new Set(prev);
+    n.has(id) ? n.delete(id) : n.add(id);
+    return n;
+  });
+
+  const exitSelectMode = () => { setSelectMode(false); setSelected(new Set()); };
+
+  const doDelete = () => {
+    if (confirmDel === 'all') activeOrders.forEach(o => deleteOrder(o.id));
+    else if (confirmDel === 'selected') selected.forEach(id => deleteOrder(id));
+    setConfirmDel(null);
+    exitSelectMode();
   };
 
   const addPayDrink = (d:{name:string;price:number;category:string}) => {
@@ -417,7 +435,7 @@ export default function POSTerminal() {
         <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9 }}>
           <div style={{ display:'flex',alignItems:'center',gap:7 }}>
             <ShoppingCart style={{ width:14,height:14,color:ORANGE }}/>
-            <span style={{ fontWeight:800,fontSize:14,color:'#EDF0F4',fontFamily:F }}>Pedido</span>
+            <span style={{ fontWeight:800,fontSize:16,color:'#EDF0F4',fontFamily:F }}>Pedido</span>
             {cart.length>0&&<span style={{ backgroundColor:ORANGE,color:'#FFF',fontSize:10,fontWeight:800,borderRadius:100,padding:'2px 7px',fontFamily:MONO }}>{cart.length}</span>}
           </div>
         </div>
@@ -439,8 +457,8 @@ export default function POSTerminal() {
 
       <div style={{ padding:'10px',borderTop:BORDER,flexShrink:0 }}>
         <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:9,padding:'9px 13px',backgroundColor:'rgba(249,115,22,0.07)',borderRadius:9,border:'1px solid rgba(249,115,22,0.14)' }}>
-          <span style={{ fontSize:12,fontWeight:600,color:'#6B7280',fontFamily:F }}>Total</span>
-          <span style={{ fontSize:20,fontWeight:800,color:ORANGE,fontFamily:MONO }}>L.{cartTotal.toFixed(2)}</span>
+          <span style={{ fontSize:13,fontWeight:600,color:'#6B7280',fontFamily:F }}>Total</span>
+          <span style={{ fontSize:22,fontWeight:800,color:ORANGE,fontFamily:MONO }}>L.{cartTotal.toFixed(2)}</span>
         </div>
         <button onClick={sendToKitchen} disabled={cart.length===0} style={{ width:'100%',padding:'12px',borderRadius:10,border:'none',backgroundColor:cart.length>0?ORANGE:'rgba(249,115,22,0.1)',color:cart.length>0?'#FFF':'#374151',fontWeight:700,fontSize:13,cursor:cart.length>0?'pointer':'not-allowed',WebkitAppearance:'none',display:'flex',alignItems:'center',justifyContent:'center',gap:7,fontFamily:F }}>
           <Send style={{ width:14,height:14 }}/> Enviar a cocina
@@ -527,9 +545,9 @@ export default function POSTerminal() {
               <div style={{ flex:1,overflowY:'auto',padding:'10px' }}>
                 <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(115px,1fr))',gap:7 }}>
                   {filtered.map((item,i)=>(
-                    <button key={i} onClick={()=>addToCart(item)} style={{ backgroundColor:CARD,border:BORDER,borderRadius:11,padding:'12px 10px',cursor:'pointer',WebkitAppearance:'none',textAlign:'left',minHeight:66,display:'flex',flexDirection:'column',justifyContent:'space-between',transition:'border-color 0.12s' }}>
-                      <p style={{ fontSize:11,fontWeight:600,color:'#EDF0F4',lineHeight:1.35,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as const,fontFamily:F }}>{item.name}</p>
-                      <p style={{ fontSize:14,fontWeight:800,color:ORANGE,marginTop:6,fontFamily:MONO }}>L.{item.price}</p>
+                    <button key={i} onClick={()=>addToCart(item)} style={{ backgroundColor:CARD,border:BORDER,borderRadius:11,padding:'13px 11px',cursor:'pointer',WebkitAppearance:'none',textAlign:'left',minHeight:76,display:'flex',flexDirection:'column',justifyContent:'space-between',transition:'border-color 0.12s' }}>
+                      <p style={{ fontSize:13,fontWeight:600,color:'#EDF0F4',lineHeight:1.35,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' as const,fontFamily:F }}>{item.name}</p>
+                      <p style={{ fontSize:16,fontWeight:800,color:ORANGE,marginTop:6,fontFamily:MONO }}>L.{item.price}</p>
                     </button>
                   ))}
                   <button onClick={()=>setShowCustom(true)} style={{ backgroundColor:'rgba(249,115,22,0.04)',border:'1px dashed rgba(249,115,22,0.2)',borderRadius:11,padding:'12px 10px',cursor:'pointer',WebkitAppearance:'none',minHeight:66,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:5 }}>
@@ -548,32 +566,83 @@ export default function POSTerminal() {
               </div>
               <div style={{ flex:1,overflowY:'auto',padding:'5px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,alignContent:'start' }}>
                 {DRINKS.map((d,i)=>(
-                  <button key={i} onClick={()=>chargeDrink(d)} style={{ backgroundColor:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.14)',borderRadius:8,padding:'5px 3px',cursor:'pointer',WebkitAppearance:'none',textAlign:'center',overflow:'hidden' }}>
-                    <p style={{ fontSize:7,fontWeight:600,color:'#CBD5E1',lineHeight:1.25,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:F }}>{d.name}</p>
-                    <p style={{ fontSize:10,fontWeight:800,color:'#60A5FA',fontFamily:MONO }}>L.{d.price}</p>
+                  <button key={i} onClick={()=>chargeDrink(d)} style={{ backgroundColor:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.14)',borderRadius:8,padding:'6px 4px',cursor:'pointer',WebkitAppearance:'none',textAlign:'center',overflow:'hidden' }}>
+                    <p style={{ fontSize:9,fontWeight:600,color:'#CBD5E1',lineHeight:1.25,marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontFamily:F }}>{d.name}</p>
+                    <p style={{ fontSize:12,fontWeight:800,color:'#60A5FA',fontFamily:MONO }}>L.{d.price}</p>
                   </button>
                 ))}
               </div>
             </div>
           </>
         ) : (
-          <div style={{ flex:1,overflowY:'auto',padding:'14px' }}>
-            {activeOrders.length===0 ? (
-              <div style={{ display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:300,gap:12 }}>
-                <CheckCircle style={{ width:44,height:44,color:'#1F2937' }}/>
-                <p style={{ fontSize:15,fontWeight:700,color:'#374151',fontFamily:F }}>Sin pedidos activos</p>
-              </div>
-            ) : (
-              <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:12 }}>
-                {activeOrders.map(order=>(
-                  <OrderCard key={order.id} order={order}
-                    onDeliver={()=>updateOrderStatus(order.id,'delivered')}
-                    onPay={()=>{setPayingId(order.id);setPayExtras([]);}}
-                    onMarkItem={id=>markItemReady(order.id,id)}
-                  />
-                ))}
+          <div style={{ flex:1,display:'flex',flexDirection:'column',overflow:'hidden' }}>
+            {/* Orders toolbar */}
+            {activeOrders.length>0&&(
+              <div style={{ padding:'8px 14px',borderBottom:BORDER,backgroundColor:'#0A0C12',display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,flexShrink:0 }}>
+                {selectMode ? (
+                  <>
+                    <div style={{ display:'flex',alignItems:'center',gap:8 }}>
+                      <button onClick={()=>setSelected(selected.size===activeOrders.length?new Set():new Set(activeOrders.map(o=>o.id)))}
+                        style={{ padding:'5px 11px',borderRadius:7,border:BORDER,backgroundColor:CARD2,color:'#9AA3B0',fontWeight:600,fontSize:11,cursor:'pointer',WebkitAppearance:'none',fontFamily:F }}>
+                        {selected.size===activeOrders.length?'Deselect todo':'Selec. todo'}
+                      </button>
+                      <span style={{ fontSize:11,color:'#4B5563',fontFamily:MONO }}>{selected.size} seleccionado{selected.size!==1?'s':''}</span>
+                    </div>
+                    <div style={{ display:'flex',gap:6 }}>
+                      <button onClick={exitSelectMode}
+                        style={{ padding:'5px 11px',borderRadius:7,border:BORDER,backgroundColor:'transparent',color:'#6B7280',fontWeight:600,fontSize:11,cursor:'pointer',WebkitAppearance:'none',fontFamily:F }}>
+                        Cancelar
+                      </button>
+                      <button disabled={selected.size===0} onClick={()=>setConfirmDel('selected')}
+                        style={{ padding:'5px 13px',borderRadius:7,border:'none',backgroundColor:selected.size>0?'rgba(239,68,68,0.15)':'rgba(255,255,255,0.03)',color:selected.size>0?'#EF4444':'#374151',fontWeight:700,fontSize:11,cursor:selected.size>0?'pointer':'not-allowed',WebkitAppearance:'none',fontFamily:F,display:'flex',alignItems:'center',gap:5 }}>
+                        <Trash2 style={{ width:11,height:11 }}/>Borrar
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ fontSize:11,color:'#4B5563',fontFamily:F }}>{activeOrders.length} pedido{activeOrders.length!==1?'s':''} activo{activeOrders.length!==1?'s':''}</span>
+                    <div style={{ display:'flex',gap:6 }}>
+                      <button onClick={()=>{setSelectMode(true);setSelected(new Set());}}
+                        style={{ padding:'5px 11px',borderRadius:7,border:BORDER,backgroundColor:CARD2,color:'#9AA3B0',fontWeight:600,fontSize:11,cursor:'pointer',WebkitAppearance:'none',fontFamily:F }}>
+                        Seleccionar
+                      </button>
+                      <button onClick={()=>setConfirmDel('all')}
+                        style={{ padding:'5px 11px',borderRadius:7,border:'1px solid rgba(239,68,68,0.2)',backgroundColor:'rgba(239,68,68,0.08)',color:'#EF4444',fontWeight:700,fontSize:11,cursor:'pointer',WebkitAppearance:'none',fontFamily:F,display:'flex',alignItems:'center',gap:5 }}>
+                        <Trash2 style={{ width:11,height:11 }}/>Borrar todo
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
+            <div style={{ flex:1,overflowY:'auto',padding:'14px' }}>
+              {activeOrders.length===0 ? (
+                <div style={{ display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',minHeight:300,gap:12 }}>
+                  <CheckCircle style={{ width:44,height:44,color:'#1F2937' }}/>
+                  <p style={{ fontSize:15,fontWeight:700,color:'#374151',fontFamily:F }}>Sin pedidos activos</p>
+                </div>
+              ) : (
+                <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))',gap:12 }}>
+                  {activeOrders.map(order=>(
+                    <div key={order.id} style={{ position:'relative' }}>
+                      {selectMode&&(
+                        <button onClick={()=>toggleSelect(order.id)} style={{ position:'absolute',top:10,right:10,zIndex:5,width:22,height:22,borderRadius:6,border:`2px solid ${selected.has(order.id)?'#EF4444':'rgba(255,255,255,0.18)'}`,backgroundColor:selected.has(order.id)?'rgba(239,68,68,0.15)':'rgba(255,255,255,0.04)',cursor:'pointer',WebkitAppearance:'none',display:'flex',alignItems:'center',justifyContent:'center' }}>
+                          {selected.has(order.id)&&<span style={{ color:'#EF4444',fontSize:11,fontWeight:900 }}>✓</span>}
+                        </button>
+                      )}
+                      <div onClick={selectMode?()=>toggleSelect(order.id):undefined} style={{ opacity:selectMode&&!selected.has(order.id)?0.6:1,transition:'opacity 0.15s',cursor:selectMode?'pointer':'default' }}>
+                        <OrderCard order={order}
+                          onDeliver={()=>!selectMode&&updateOrderStatus(order.id,'delivered')}
+                          onPay={()=>!selectMode&&(setPayingId(order.id),setPayExtras([]))}
+                          onMarkItem={id=>!selectMode&&markItemReady(order.id,id)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -583,6 +652,26 @@ export default function POSTerminal() {
         </div>
       </div>
 
+      {/* Confirm delete modal */}
+      {confirmDel&&(
+        <div style={{ position:'fixed',inset:0,backgroundColor:'rgba(0,0,0,0.85)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:500,padding:20 }}>
+          <div style={{ width:'100%',maxWidth:320,backgroundColor:CARD,borderRadius:16,border:'1px solid rgba(239,68,68,0.25)',overflow:'hidden' }}>
+            <div style={{ padding:'20px 20px 16px',textAlign:'center' }}>
+              <div style={{ width:48,height:48,borderRadius:14,backgroundColor:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.2)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 14px' }}>
+                <Trash2 style={{ width:20,height:20,color:'#EF4444' }}/>
+              </div>
+              <p style={{ fontWeight:800,fontSize:16,color:'#EDF0F4',marginBottom:6,fontFamily:F }}>
+                {confirmDel==='all'?'¿Borrar todos los pedidos?':`¿Borrar ${selected.size} pedido${selected.size!==1?'s':''}?`}
+              </p>
+              <p style={{ fontSize:12,color:'#4B5563',fontFamily:F }}>Esta acción no se puede deshacer.</p>
+            </div>
+            <div style={{ display:'flex',gap:8,padding:'0 16px 16px' }}>
+              <button onClick={()=>setConfirmDel(null)} style={{ flex:1,padding:'11px',borderRadius:9,border:BORDER,backgroundColor:CARD2,color:'#6B7280',fontWeight:700,fontSize:13,cursor:'pointer',WebkitAppearance:'none',fontFamily:F }}>Cancelar</button>
+              <button onClick={doDelete} style={{ flex:1,padding:'11px',borderRadius:9,border:'none',backgroundColor:'#EF4444',color:'#FFF',fontWeight:800,fontSize:13,cursor:'pointer',WebkitAppearance:'none',fontFamily:F }}>Borrar</button>
+            </div>
+          </div>
+        </div>
+      )}
       {showCustom&&<CustomModal onAdd={addToCart} onClose={()=>setShowCustom(false)}/>}
       {showCalc&&<CalcModal onClose={()=>setShowCalc(false)}/>}
       {payOrder&&(

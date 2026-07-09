@@ -5,25 +5,8 @@ const publicAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 
 const SUPABASE_URL = `https://${projectId}.supabase.co`;
 
-// Intenta directo primero; si falla, usa el proxy de Vercel
-async function smartFetch(url: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  const urlStr = url.toString();
-  if (!urlStr.startsWith(SUPABASE_URL)) return fetch(url, init);
-  try {
-    const r = await fetch(url, init);
-    if (r.ok || r.status < 500) return r;
-    throw new Error(`status ${r.status}`);
-  } catch {
-    // Fallback: proxy de Vercel
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const proxied = `${origin}/api/supabase?_url=${encodeURIComponent(urlStr)}`;
-    return fetch(proxied, init);
-  }
-}
-
 const supabase = createClient(SUPABASE_URL, publicAnonKey, {
   realtime: { params: { eventsPerSecond: 10 } },
-  global: { fetch: smartFetch },
 });
 
 const LS_KEY  = 'ddc-state-v7';
@@ -140,6 +123,8 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const tabId     = useRef(crypto.randomUUID());
   const bcRef     = useRef<BroadcastChannel | null>(null);
   const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Tracks Realtime WebSocket connection state independently from REST polling
+  const realtimeConnectedRef = useRef(false);
 
   useEffect(() => { ordersRef.current = orders; }, [orders]);
   useEffect(() => { txRef.current = transactions; }, [transactions]);
@@ -162,27 +147,17 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     return () => bc.close();
   }, [apply]);
 
-  const ping = useCallback(async (): Promise<boolean> => {
-    try {
-      const r = await smartFetch(`${SUPABASE_URL}/rest/v1/`, {
-        headers: { apikey: publicAnonKey, Authorization: `Bearer ${publicAnonKey}` },
-      });
-      return r.status < 500;
-    } catch { return false; }
-  }, []);
-
   const fetchAll = useCallback(async (): Promise<boolean> => {
     try {
       const [{ data: od, error: oe }, { data: td, error: te }] = await Promise.all([
         supabase.from('orders').select('*').order('timestamp', { ascending: false }),
         supabase.from('transactions').select('*').order('timestamp', { ascending: false }),
       ]);
-      const reachable = await ping();
-      if (oe || te) return reachable; // conectado pero tablas con error
+      if (oe || te) return false;
       apply({ orders: (od || []).map(fromDb), transactions: (td || []).map((r: any) => ({ ...r, amount: parseFloat(r.amount) })) }, true);
       return true;
-    } catch { return ping(); }
-  }, [apply, ping]);
+    } catch { return false; }
+  }, [apply]);
 
   const writeOrder = useCallback(async (op: QOp) => {
     try {
@@ -215,22 +190,30 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       txRef.current = ls.transactions;
       await flushQ();
       setPendingCount(loadQ().length);
-      for (let i = 0; i < 4; i++) {
+      // Reduced retries from 4 to 3, keeping 1.5s gap
+      for (let i = 0; i < 3; i++) {
         const ok = await fetchAll();
         if (ok) { setConnected(true); break; }
-        if (i < 3) await new Promise(r => setTimeout(r, 1500));
+        if (i < 2) await new Promise(r => setTimeout(r, 1500));
       }
     };
     boot();
   }, [fetchAll, apply]);
 
   useEffect(() => {
+    // Polling interval increased from 3000ms to 5000ms
     pollRef.current = setInterval(async () => {
       const remaining = await flushQ();
       setPendingCount(remaining);
       const ok = await fetchAll();
-      setConnected(ok);
-    }, 3000);
+      // Only mark disconnected from REST failures if Realtime WebSocket is also not connected.
+      // If Realtime is healthy, transient REST failures don't affect the connected indicator.
+      if (ok) {
+        setConnected(true);
+      } else if (!realtimeConnectedRef.current) {
+        setConnected(false);
+      }
+    }, 5000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [fetchAll]);
 
@@ -257,6 +240,8 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       await new Promise(r => setTimeout(r, 800));
       ordCh = supabase.channel('orders-rt-v7')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, payload => {
+          // Receiving a realtime event means the WebSocket is alive
+          realtimeConnectedRef.current = true;
           setConnected(true);
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const o = fromDb(payload.new);
@@ -276,10 +261,18 @@ export function OrderProvider({ children }: { children: ReactNode }) {
             });
           }
         })
-        .subscribe(st => { if (st === 'SUBSCRIBED') setConnected(true); });
+        .subscribe(status => {
+          const isSubscribed = status === 'SUBSCRIBED';
+          realtimeConnectedRef.current = isSubscribed;
+          // When subscribed, always mark connected. When not subscribed, only mark
+          // disconnected if realtime truly dropped (not just a transient REST issue).
+          setConnected(isSubscribed || realtimeConnectedRef.current);
+        });
 
       txCh = supabase.channel('transactions-rt-v7')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, payload => {
+          // Receiving a realtime event means the WebSocket is alive
+          realtimeConnectedRef.current = true;
           setConnected(true);
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const tx = { ...payload.new as Transaction, amount: parseFloat((payload.new as any).amount) };
@@ -298,7 +291,15 @@ export function OrderProvider({ children }: { children: ReactNode }) {
               return upd;
             });
           }
-        }).subscribe();
+        }).subscribe(status => {
+          const isSubscribed = status === 'SUBSCRIBED';
+          // Only update realtimeConnectedRef to true here; the orders channel subscribe
+          // callback is the canonical source for disconnection state to avoid flip-flopping.
+          if (isSubscribed) {
+            realtimeConnectedRef.current = true;
+            setConnected(true);
+          }
+        });
     };
     setup();
     return () => {
@@ -308,7 +309,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const h = () => fetchAll().then(ok => setConnected(ok));
+    const h = () => fetchAll().then(ok => {
+      if (ok) setConnected(true);
+      else if (!realtimeConnectedRef.current) setConnected(false);
+    });
     window.addEventListener('online', h);
     return () => window.removeEventListener('online', h);
   }, [fetchAll]);

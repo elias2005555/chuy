@@ -49,39 +49,39 @@ const OrderTicket = memo(function OrderTicket({ order, onNext, onMarkItem }: {
       flexDirection: 'column',
     }}>
       {/* Ticket header */}
-      <div style={{ backgroundColor:`${meta.color}0E`, borderBottom:`1px solid ${meta.color}18`, padding:'10px 14px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+      <div style={{ backgroundColor:`${meta.color}0E`, borderBottom:`1px solid ${meta.color}18`, padding:'12px 16px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          <p style={{ fontWeight:900, fontSize:18, color:'#EDF0F4', fontFamily:MONO, lineHeight:1 }}>{order.id}</p>
-          <p style={{ fontSize:10, color:'#4B5563', marginTop:3, fontFamily:F }}>
+          <p style={{ fontWeight:900, fontSize:24, color:'#EDF0F4', fontFamily:MONO, lineHeight:1 }}>{order.id}</p>
+          <p style={{ fontSize:13, color:'#4B5563', marginTop:4, fontFamily:F }}>
             {order.avatarEmoji} {order.sentBy}
           </p>
         </div>
         <div style={{ textAlign:'right' }}>
-          <span style={{ fontSize:10, fontWeight:700, padding:'4px 10px', borderRadius:100, backgroundColor:`${meta.color}18`, color:meta.color, fontFamily:MONO, letterSpacing:0.5, display:'block', marginBottom:5 }}>
+          <span style={{ fontSize:12, fontWeight:700, padding:'5px 12px', borderRadius:100, backgroundColor:`${meta.color}18`, color:meta.color, fontFamily:MONO, letterSpacing:0.5, display:'block', marginBottom:6 }}>
             {meta.label}
           </span>
-          <div style={{ display:'flex', alignItems:'center', gap:4, justifyContent:'flex-end' }}>
-            <Clock style={{ width:10, height:10, color:'#4B5563' }}/>
-            <span style={{ fontSize:10, color:'#4B5563', fontFamily:MONO }}>{time}</span>
+          <div style={{ display:'flex', alignItems:'center', gap:5, justifyContent:'flex-end' }}>
+            <Clock style={{ width:12, height:12, color:'#4B5563' }}/>
+            <span style={{ fontSize:12, color:'#4B5563', fontFamily:MONO }}>{time}</span>
           </div>
         </div>
       </div>
 
       {/* Items */}
-      <div style={{ padding:'8px 10px', flex:1, display:'flex', flexDirection:'column', gap:3 }}>
+      <div style={{ padding:'10px 12px', flex:1, display:'flex', flexDirection:'column', gap:5 }}>
         {order.items.map(item=>{
           const done = order.deliveredItems.includes(item.id);
           return (
             <button key={item.id} onClick={()=>onMarkItem(item.id)} style={{
-              display:'flex', alignItems:'center', gap:9, padding:'8px 10px',
-              borderRadius:8, border:`1px solid ${done?'rgba(34,197,94,0.2)':'rgba(255,255,255,0.04)'}`,
+              display:'flex', alignItems:'center', gap:10, padding:'10px 12px',
+              borderRadius:9, border:`1px solid ${done?'rgba(34,197,94,0.2)':'rgba(255,255,255,0.04)'}`,
               backgroundColor:done?'rgba(34,197,94,0.06)':'rgba(255,255,255,0.02)',
               cursor:'pointer', WebkitAppearance:'none', textAlign:'left', width:'100%',
             }}>
-              <div style={{ width:18, height:18, borderRadius:5, flexShrink:0, backgroundColor:done?'#22C55E':'transparent', border:`1.5px solid ${done?'#22C55E':'rgba(255,255,255,0.12)'}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                {done&&<span style={{ color:'#FFF', fontSize:9, fontWeight:900 }}>✓</span>}
+              <div style={{ width:22, height:22, borderRadius:6, flexShrink:0, backgroundColor:done?'#22C55E':'transparent', border:`2px solid ${done?'#22C55E':'rgba(255,255,255,0.12)'}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                {done&&<span style={{ color:'#FFF', fontSize:11, fontWeight:900 }}>✓</span>}
               </div>
-              <span style={{ flex:1, fontSize:13, fontWeight:700, color:done?'#374151':'#EDF0F4', textDecoration:done?'line-through':'none', fontFamily:F }}>
+              <span style={{ flex:1, fontSize:16, fontWeight:700, color:done?'#374151':'#EDF0F4', textDecoration:done?'line-through':'none', fontFamily:F }}>
                 {item.quantity}× {item.name}
               </span>
             </button>
@@ -91,11 +91,11 @@ const OrderTicket = memo(function OrderTicket({ order, onNext, onMarkItem }: {
 
       {/* Action */}
       {meta.next && (
-        <div style={{ padding:'10px', borderTop:BORDER }}>
+        <div style={{ padding:'12px', borderTop:BORDER }}>
           <button onClick={onNext} style={{
-            width:'100%', padding:'11px', borderRadius:10, border:'none',
+            width:'100%', padding:'14px', borderRadius:11, border:'none',
             backgroundColor: meta.next==='ready'?'#22C55E':meta.color,
-            color:'#FFF', fontWeight:800, fontSize:13, cursor:'pointer',
+            color:'#FFF', fontWeight:800, fontSize:16, cursor:'pointer',
             WebkitAppearance:'none', fontFamily:F,
             opacity: allDone||order.status==='pending' ? 1 : 0.7,
           }}>
@@ -104,9 +104,9 @@ const OrderTicket = memo(function OrderTicket({ order, onNext, onMarkItem }: {
         </div>
       )}
       {order.status==='ready' && (
-        <div style={{ padding:'10px 14px', borderTop:BORDER, display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>
-          <CheckCircle style={{ width:14, height:14, color:'#22C55E' }}/>
-          <span style={{ fontSize:12, color:'#22C55E', fontWeight:700, fontFamily:F }}>Esperando al mesero</span>
+        <div style={{ padding:'12px 16px', borderTop:BORDER, display:'flex', alignItems:'center', justifyContent:'center', gap:7 }}>
+          <CheckCircle style={{ width:16, height:16, color:'#22C55E' }}/>
+          <span style={{ fontSize:14, color:'#22C55E', fontWeight:700, fontFamily:F }}>Esperando al mesero</span>
         </div>
       )}
     </div>
