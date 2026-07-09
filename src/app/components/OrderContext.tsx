@@ -149,16 +149,21 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   const fetchAll = useCallback(async (): Promise<boolean> => {
     try {
+      // Solo pedir datos de hoy — evita traer miles de registros viejos
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const since = todayStart.toISOString();
+
       const [{ data: od, error: oe }, { data: td, error: te }] = await Promise.all([
-        supabase.from('orders').select('*').order('timestamp', { ascending: false }),
-        supabase.from('transactions').select('*').order('timestamp', { ascending: false }),
+        supabase.from('orders').select('*').gte('timestamp', since).order('timestamp', { ascending: false }),
+        supabase.from('transactions').select('*').gte('timestamp', since).order('timestamp', { ascending: false }),
       ]);
       if (oe || te) return false;
 
       const dbOrders = (od || []).map(fromDb);
       const dbTxs    = (td || []).map((r: any) => ({ ...r, amount: parseFloat(r.amount) }));
 
-      // Preserve local items pending confirmation in Supabase to avoid race-condition deletions
+      // Conservar pedidos locales pendientes de confirmación en Supabase
       const q = loadQ();
       const pendingOrderIds = new Set(q.filter(op => op.t === 'upsert_order').map(op => (op as any).d.id));
       const pendingTxIds    = new Set(q.filter(op => op.t === 'upsert_tx').map(op => (op as any).d.id));
@@ -217,7 +222,6 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   }, [fetchAll, apply]);
 
   useEffect(() => {
-    // Polling interval increased from 3000ms to 5000ms
     pollRef.current = setInterval(async () => {
       const remaining = await flushQ();
       setPendingCount(remaining);
@@ -229,7 +233,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       } else if (!realtimeConnectedRef.current) {
         setConnected(false);
       }
-    }, 5000);
+    }, 3000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [fetchAll]);
 
