@@ -1,16 +1,17 @@
-import { useState, useMemo } from 'react';
-import { useOrders, Transaction } from './OrderContext';
+import { useState, useMemo, useEffect } from 'react';
+import { useOrders, Transaction, DailySummary } from './OrderContext';
 import { useNavigate } from 'react-router';
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Plus, Trash2, Download, X, Lock, RefreshCw, BarChart3 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Plus, Trash2, Download, X, Lock, RefreshCw, BarChart3, UtensilsCrossed, Database } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import jsPDF from 'jspdf';
 import logoImg from '../../imports/image-1.png';
+import { MENU_ITEMS } from './menuData';
 
-const F    = "'Inter',-apple-system,sans-serif";
-const MONO = "'JetBrains Mono',monospace";
+const F    = "'Nunito Sans',-apple-system,sans-serif";
+const MONO = "'DM Mono',monospace";
 const BG   = '#07090D';
 const CARD = '#0E1117';
 const CARD2= '#111620';
@@ -182,20 +183,32 @@ function PasswordGate({ onUnlock }: { onUnlock:()=>void }) {
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { transactions, deleteTransaction, addTransaction, buildDailySummary, closeDayAndClean, cleanOldOrders, orders } = useOrders();
+  const {
+    transactions, deleteTransaction, addTransaction, buildDailySummary, getDailySummary,
+    closeDayAndClean, orders, menuItems, addMenuItem, deleteMenuItem,
+  } = useOrders();
 
   const [unlocked,setUnlocked]   = useState(false);
-  const [tab,setTab]             = useState<'overview'|'transactions'|'close'>('overview');
+  const [tab,setTab]             = useState<'overview'|'transactions'|'menu'|'close'>('overview');
   const [showAddTx,setShowAddTx] = useState(false);
   const [closeDate,setCloseDate] = useState(new Date().toISOString().slice(0,10));
   const [closing,setClosing]     = useState(false);
   const [closed,setClosed]       = useState(false);
-  const [cleaning,setCleaning]   = useState(false);
-  const [cleanMsg,setCleanMsg]   = useState<string|null>(null);
+  const [reporting,setReporting] = useState(false);
+  const [menuName,setMenuName]   = useState('');
+  const [menuPrice,setMenuPrice] = useState('');
+  const [menuCategory,setMenuCategory] = useState('Platos Fuertes');
+  const [reportSummary,setReportSummary] = useState<DailySummary|null>(null);
 
   const today   = new Date().toISOString().slice(0,10);
   const todayTx = useMemo(()=>transactions.filter(t=>t.timestamp.startsWith(today)),[transactions,today]);
   const summary  = useMemo(()=>buildDailySummary(today),[transactions,today]);
+
+  useEffect(() => {
+    let active = true;
+    getDailySummary(closeDate).then(value => { if (active) setReportSummary(value); });
+    return () => { active = false; };
+  }, [closeDate, transactions, orders, getDailySummary]);
 
   // ── Chart data ────────────────────────────────────────────────────────────
   const hourlyData = useMemo(()=>{
@@ -224,9 +237,10 @@ export default function AdminDashboard() {
   ].filter(d=>d.value>0),[summary]);
 
   // ── PDF ───────────────────────────────────────────────────────────────────
-  const downloadPDF = () => {
+  const downloadPDF = async (reportDate = today) => {
+    setReporting(true);
     const doc = new jsPDF();
-    const s   = buildDailySummary(today);
+    const s   = await getDailySummary(reportDate);
     const now = new Date().toLocaleTimeString('es-HN',{hour:'2-digit',minute:'2-digit'});
 
     // Header bar
@@ -237,7 +251,7 @@ export default function AdminDashboard() {
     doc.setFontSize(18); doc.setTextColor(249,115,22);
     doc.text('Don de Chuy Business', 13, 16);
     doc.setFontSize(9); doc.setTextColor(140,150,170);
-    doc.text(`Reporte del día: ${today}  ·  Generado: ${now}`, 13, 26);
+    doc.text(`Reporte del día: ${reportDate}  ·  Generado: ${now}`, 13, 26);
     doc.setDrawColor(249,115,22); doc.setLineWidth(0.3);
     doc.line(0,36,210,36);
 
@@ -323,10 +337,11 @@ export default function AdminDashboard() {
       doc.setPage(i);
       doc.setFillColor(8,10,15); doc.rect(0,284,210,13,'F');
       doc.setFontSize(7); doc.setTextColor(60,70,90);
-      doc.text(`Don de Chuy Business  ·  ${today}  ·  Página ${i} de ${pages}`, 14, 291);
+      doc.text(`Don de Chuy Business  ·  ${reportDate}  ·  Página ${i} de ${pages}`, 14, 291);
     }
 
-    doc.save(`ddc-reporte-${today}.pdf`);
+    doc.save(`ddc-reporte-${reportDate}.pdf`);
+    setReporting(false);
   };
 
   const doClose = async () => {
@@ -359,7 +374,7 @@ export default function AdminDashboard() {
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           {activeOrders>0 && <span style={{ fontSize:11, fontWeight:700, color:'#F97316', fontFamily:MONO }}>{activeOrders} activo{activeOrders!==1?'s':''}</span>}
-          <IBtn onClick={downloadPDF}><Download style={{ width:14, height:14 }}/></IBtn>
+          <IBtn onClick={()=>downloadPDF(today)}><Download style={{ width:14, height:14 }}/></IBtn>
           <button onClick={()=>setShowAddTx(true)} style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 13px', borderRadius:9, border:'none', backgroundColor:ORANGE, color:'#FFF', fontWeight:700, fontSize:12, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>
             <Plus style={{ width:13, height:13 }}/> Registrar
           </button>
@@ -369,9 +384,9 @@ export default function AdminDashboard() {
       {/* Tabs */}
       <div style={{ padding:'16px 20px 0' }}>
         <div style={{ display:'flex', gap:2, backgroundColor:CARD, borderRadius:10, padding:3, border:BORDER, width:'fit-content' }}>
-          {(['overview','transactions','close'] as const).map(t=>(
+          {(['overview','transactions','menu','close'] as const).map(t=>(
             <button key={t} onClick={()=>setTab(t)} style={{ padding:'8px 16px', borderRadius:8, border:'none', backgroundColor:tab===t?'rgba(249,115,22,0.15)':'transparent', color:tab===t?ORANGE:'#6B7280', fontWeight:700, fontSize:12, cursor:'pointer', WebkitAppearance:'none', fontFamily:F, transition:'all 0.15s', borderBottom:tab===t?`2px solid ${ORANGE}`:'2px solid transparent' }}>
-              {t==='overview'?'Resumen hoy':t==='transactions'?'Transacciones':'Cierre del día'}
+              {t==='overview'?'Resumen hoy':t==='transactions'?'Transacciones':t==='menu'?'Menú':'Reportes y cierre'}
             </button>
           ))}
         </div>
@@ -521,17 +536,84 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* ──────────── MENU ──────────── */}
+        {tab==='menu' && (
+          <div style={{ display:'grid', gridTemplateColumns:'minmax(280px,340px) minmax(420px,1fr)', gap:14, alignItems:'start' }}>
+            <div style={{ backgroundColor:CARD, border:BORDER, borderRadius:12, padding:'20px 22px' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:5 }}>
+                <UtensilsCrossed style={{ width:17, height:17, color:ORANGE }}/>
+                <p style={{ fontWeight:800, fontSize:15, color:'#EDF0F4', fontFamily:F }}>Agregar plato</p>
+              </div>
+              <p style={{ fontSize:12, color:'#6B7280', marginBottom:18, lineHeight:1.5, fontFamily:F }}>
+                El nuevo producto aparecerá en la ventana de pedidos.
+              </p>
+              <div style={{ display:'flex', flexDirection:'column', gap:13 }}>
+                <div>
+                  <Label>Nombre del plato</Label>
+                  <input value={menuName} onChange={e=>setMenuName(e.target.value)} placeholder="Ej: Tacos al pastor"
+                    style={{ width:'100%', padding:'11px 13px', borderRadius:9, border:BORDER, backgroundColor:CARD2, color:'#EDF0F4', fontSize:14, outline:'none', boxSizing:'border-box', fontFamily:F }}/>
+                </div>
+                <div>
+                  <Label>Precio (L.)</Label>
+                  <input type="number" inputMode="decimal" value={menuPrice} onChange={e=>setMenuPrice(e.target.value)} placeholder="0.00"
+                    style={{ width:'100%', padding:'11px 13px', borderRadius:9, border:BORDER, backgroundColor:CARD2, color:'#EDF0F4', fontSize:16, outline:'none', boxSizing:'border-box', fontFamily:MONO }}/>
+                </div>
+                <div>
+                  <Label>Categoría</Label>
+                  <select value={menuCategory} onChange={e=>setMenuCategory(e.target.value)}
+                    style={{ width:'100%', padding:'11px 13px', borderRadius:9, border:BORDER, backgroundColor:CARD2, color:'#EDF0F4', fontSize:14, outline:'none', boxSizing:'border-box', fontFamily:F }}>
+                    {['Desayunos','Golosinas','Platos Fuertes','Bebidas','Chucherías','Helados'].map(category=><option key={category}>{category}</option>)}
+                  </select>
+                </div>
+                <button onClick={async()=>{
+                  const price = Number(menuPrice);
+                  if (!menuName.trim() || price <= 0) return;
+                  await addMenuItem({ name:menuName.trim(), price, category:menuCategory });
+                  setMenuName(''); setMenuPrice('');
+                }} style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:7, width:'100%', padding:'13px', borderRadius:10, border:'none', backgroundColor:ORANGE, color:'#FFF', fontWeight:800, fontSize:14, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>
+                  <Plus style={{ width:15, height:15 }}/> Guardar en el menú
+                </button>
+              </div>
+            </div>
+
+            <div style={{ backgroundColor:CARD, borderRadius:12, border:BORDER, overflow:'hidden' }}>
+              <div style={{ padding:'14px 18px', borderBottom:BORDER, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <div>
+                  <p style={{ fontWeight:800, fontSize:14, color:'#EDF0F4', fontFamily:F }}>Menú de ventana</p>
+                  <p style={{ fontSize:11, color:'#4B5563', marginTop:2, fontFamily:MONO }}>{menuItems.length} productos</p>
+                </div>
+                <span style={{ fontSize:10, color:'#22C55E', fontWeight:800, padding:'4px 9px', borderRadius:100, backgroundColor:'rgba(34,197,94,0.08)', fontFamily:MONO }}>SINCRONIZADO</span>
+              </div>
+              <div style={{ maxHeight:560, overflowY:'auto' }}>
+                {menuItems.map((item,i)=>(
+                  <div key={`${item.category}-${item.name}`} style={{ display:'grid', gridTemplateColumns:'1fr 130px 90px 34px', gap:10, alignItems:'center', padding:'10px 14px', borderTop:i?'1px solid rgba(255,255,255,0.04)':'none', backgroundColor:i%2?`${CARD2}66`:'transparent' }}>
+                    <span style={{ fontSize:13, fontWeight:700, color:'#EDF0F4', fontFamily:F }}>{item.name}</span>
+                    <span style={{ fontSize:10, color:'#6B7280', fontFamily:MONO }}>{item.category}</span>
+                    <span style={{ fontSize:13, fontWeight:800, color:ORANGE, fontFamily:MONO }}>L.{item.price.toFixed(2)}</span>
+                    {MENU_ITEMS.some(base=>base.name===item.name) ? <span/> : (
+                      <button onClick={()=>deleteMenuItem(item.name)} aria-label={`Eliminar ${item.name}`}
+                        style={{ width:28, height:28, borderRadius:7, backgroundColor:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.14)', color:'#EF4444', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', WebkitAppearance:'none' }}>
+                        <Trash2 style={{ width:11, height:11 }}/>
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ──────────── CLOSE DAY ──────────── */}
         {tab==='close' && (
           <div style={{ maxWidth:500 }}>
             <div style={{ backgroundColor:CARD, border:BORDER, borderRadius:12, padding:'20px 22px', marginBottom:16 }}>
-              <p style={{ fontWeight:700, fontSize:15, color:'#EDF0F4', marginBottom:4, fontFamily:F }}>Cierre del día</p>
-              <p style={{ fontSize:12, color:'#6B7280', marginBottom:18, fontFamily:F }}>Elimina los pedidos de cocina del día. Las transacciones se conservan.</p>
-              <Label>Fecha a cerrar</Label>
+              <p style={{ fontWeight:700, fontSize:15, color:'#EDF0F4', marginBottom:4, fontFamily:F }}>Reportes por fecha</p>
+              <p style={{ fontSize:12, color:'#6B7280', marginBottom:18, lineHeight:1.5, fontFamily:F }}>Descarga el PDF completo de cualquier día. Los datos históricos permanecen guardados aunque cierres la jornada.</p>
+              <Label>Fecha del reporte</Label>
               <input type="date" value={closeDate} onChange={e=>setCloseDate(e.target.value)}
                 style={{ width:'100%', padding:'11px 13px', borderRadius:9, border:BORDER, backgroundColor:CARD2, color:'#EDF0F4', fontSize:14, outline:'none', boxSizing:'border-box', marginBottom:14, fontFamily:MONO }}/>
-              {closeDate && (()=>{
-                const s = buildDailySummary(closeDate);
+              {closeDate && reportSummary && (()=>{
+                const s = reportSummary;
                 return (
                   <div style={{ backgroundColor:CARD2, borderRadius:9, padding:'14px', marginBottom:16, border:BORDER }}>
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
@@ -551,30 +633,26 @@ export default function AdminDashboard() {
                 );
               })()}
               <div style={{ display:'flex', gap:9 }}>
-                <button onClick={downloadPDF} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'12px', borderRadius:10, border:BORDER, backgroundColor:CARD2, color:'#9AA3B0', fontWeight:700, fontSize:13, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>
-                  <Download style={{ width:14,height:14 }}/> PDF
+                <button onClick={()=>downloadPDF(closeDate)} disabled={reporting} style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'12px', borderRadius:10, border:BORDER, backgroundColor:CARD2, color:'#9AA3B0', fontWeight:700, fontSize:13, cursor:reporting?'wait':'pointer', WebkitAppearance:'none', fontFamily:F }}>
+                  {reporting?<RefreshCw style={{ width:14,height:14 }}/>:<Download style={{ width:14,height:14 }}/>} {reporting?'Preparando...':'Guardar PDF'}
                 </button>
                 <button onClick={doClose} disabled={closing} style={{ flex:2, display:'flex', alignItems:'center', justifyContent:'center', gap:7, padding:'12px', borderRadius:10, border:'none', backgroundColor:closing?'rgba(239,68,68,0.2)':'rgba(239,68,68,0.85)', color:'#FFF', fontWeight:700, fontSize:13, cursor:closing?'not-allowed':'pointer', WebkitAppearance:'none', fontFamily:F }}>
                   {closing&&<RefreshCw style={{ width:14,height:14 }}/>}
-                  {closing?'Cerrando...':closed?'✓ Cerrado':'Cerrar día'}
+                  {closing?'Cerrando...':closed?'✓ Jornada cerrada':'Cerrar jornada en la app'}
                 </button>
               </div>
             </div>
 
             <p style={{ fontSize:11, color:'#374151', fontFamily:F, lineHeight:1.6 }}>
-              ⚠ Esta acción elimina permanentemente los pedidos. Las transacciones financieras se conservan.
+              El cierre limpia la vista operativa. Pedidos, productos y transacciones siguen archivados para el PDF.
             </p>
 
-            <div style={{ backgroundColor:CARD, border:'1px solid rgba(239,68,68,0.2)', borderRadius:12, padding:'20px 22px', marginTop:16 }}>
-              <p style={{ fontWeight:700, fontSize:15, color:'#EDF0F4', marginBottom:4, fontFamily:F }}>Limpiar historial antiguo</p>
-              <p style={{ fontSize:12, color:'#6B7280', marginBottom:18, fontFamily:F }}>Borra de Supabase todos los pedidos anteriores a hoy.</p>
-              <button onClick={async()=>{setCleaning(true);setCleanMsg(null);const n=await cleanOldOrders();setCleaning(false);setCleanMsg(n<0?'Error al conectar.':(n===0?'No había pedidos antiguos.':`✓ Se borraron ${n} pedido${n!==1?'s':''} antiguos.`));}}
-                disabled={cleaning}
-                style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:8, padding:'13px', borderRadius:10, border:'none', backgroundColor:cleaning?'rgba(239,68,68,0.15)':'rgba(239,68,68,0.75)', color:'#FFF', fontWeight:700, fontSize:14, cursor:cleaning?'not-allowed':'pointer', WebkitAppearance:'none', fontFamily:F }}>
-                {cleaning?<RefreshCw style={{ width:15,height:15 }}/>:<Trash2 style={{ width:15,height:15 }}/>}
-                {cleaning?'Limpiando...':'Borrar pedidos antiguos'}
-              </button>
-              {cleanMsg && <p style={{ fontSize:13, fontWeight:600, color:cleanMsg.startsWith('✓')?'#22C55E':'#EF4444', marginTop:12, textAlign:'center', fontFamily:F }}>{cleanMsg}</p>}
+            <div style={{ backgroundColor:CARD, border:'1px solid rgba(34,197,94,0.18)', borderRadius:12, padding:'18px 20px', marginTop:16, display:'flex', gap:12, alignItems:'flex-start' }}>
+              <Database style={{ width:18, height:18, color:'#22C55E', marginTop:1, flexShrink:0 }}/>
+              <div>
+                <p style={{ fontWeight:700, fontSize:13, color:'#EDF0F4', marginBottom:4, fontFamily:F }}>Archivo histórico activo</p>
+                <p style={{ fontSize:12, color:'#6B7280', lineHeight:1.55, fontFamily:F }}>El cierre automático ocurre a las 11:59 p. m. y nunca elimina la información usada por los reportes.</p>
+              </div>
             </div>
           </div>
         )}

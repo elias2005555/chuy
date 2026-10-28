@@ -1,5 +1,6 @@
 import { createClient, RealtimeChannel } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from 'react';
+import { MENU_ITEMS, MenuItem } from './menuData';
 const projectId = 'taxicpjtltijhzpojmxw';
 const publicAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRheGljcGp0bHRpamh6cG9qbXh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzQ0MTUsImV4cCI6MjA5NzExMDQxNX0.rAUINlyH24n9NdSAkaUMIE9-LfSVn1Uuy-7EsG0b3ek';
 
@@ -12,6 +13,9 @@ const supabase = createClient(SUPABASE_URL, publicAnonKey, {
 const LS_KEY  = 'ddc-state-v7';
 const BC_NAME = 'ddc-bc-v7';
 const Q_KEY   = 'ddc-queue-v7';
+const MENU_KEY = 'ddc-menu-v1';
+const CLOSE_KEY = 'ddc-last-auto-close';
+const UI_SINCE_KEY = 'ddc-ui-since';
 
 export interface OrderItem {
   id: string; name: string; price: number; quantity: number; category: string;
@@ -38,6 +42,7 @@ interface BCMsg { type: 'STATE'; state: AppState; from: string }
 
 interface OrderContextType {
   orders: Order[]; transactions: Transaction[];
+  menuItems: MenuItem[];
   connected: boolean; pendingCount: number;
   dbError: string | null;
   addOrder: (o: Omit<Order, 'deliveredItems'>) => void;
@@ -50,7 +55,10 @@ interface OrderContextType {
   getTotalSales: () => number; getTotalExpenses: () => number;
   getOtherIncome: () => number; getNetProfit: () => number;
   buildDailySummary: (date: string) => DailySummary;
+  getDailySummary: (date: string) => Promise<DailySummary>;
   closeDayAndClean: (date: string) => Promise<void>;
+  addMenuItem: (item: MenuItem) => Promise<void>;
+  deleteMenuItem: (name: string) => Promise<void>;
   cleanOldOrders: () => Promise<number>;
   reconnect: () => Promise<void>;
   lastWriteError: string | null;
@@ -81,6 +89,45 @@ function loadLS(): AppState {
 }
 function saveLS(s: AppState) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch {}
+}
+function loadMenu(): MenuItem[] {
+  try {
+    const saved = JSON.parse(localStorage.getItem(MENU_KEY) || '[]');
+    if (!Array.isArray(saved) || !saved.length) return MENU_ITEMS;
+    const required = MENU_ITEMS.filter(item => item.name === 'Tacos de Birria' || item.name === 'Tacos de Pollo Mex');
+    return [...saved, ...required.filter(item => !saved.some((existing: MenuItem) => existing.name === item.name))];
+  } catch { return MENU_ITEMS; }
+}
+function saveMenu(items: MenuItem[]) {
+  try { localStorage.setItem(MENU_KEY, JSON.stringify(items)); } catch {}
+}
+
+function localDayRange(date: string) {
+  const start = new Date(`${date}T00:00:00`);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
+function makeSummary(date: string, dayTx: Transaction[], dayOrd: Order[]): DailySummary {
+  const totalSales = dayTx.filter(t => t.type === 'sale' || t.type === 'drink-log').reduce((s, t) => s + t.amount, 0);
+  const totalExpenses = dayTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const otherIncome = dayTx.filter(t => t.type === 'other-income' || t.type === 'card-close').reduce((s, t) => s + t.amount, 0);
+  const itemMap: Record<string, { qty: number; total: number }> = {};
+  dayOrd.forEach(o => o.items.forEach(i => {
+    if (!itemMap[i.name]) itemMap[i.name] = { qty: 0, total: 0 };
+    itemMap[i.name].qty += i.quantity;
+    itemMap[i.name].total += i.price * i.quantity;
+  }));
+  return {
+    date,
+    totalSales,
+    totalExpenses,
+    otherIncome,
+    netProfit: totalSales + otherIncome - totalExpenses,
+    itemsSold: Object.entries(itemMap).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.total - a.total),
+    transactions: dayTx,
+  };
 }
 
 type QOp =
@@ -132,6 +179,7 @@ async function flushQ(): Promise<{ remaining: number; permissionError: boolean; 
 export function OrderProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(loadMenu);
   const [connected, setConnected] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [dbError, setDbError] = useState<string | null>(null);
@@ -171,7 +219,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     try {
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
-      const since = todayStart.toISOString();
+      const savedSince = localStorage.getItem(UI_SINCE_KEY);
+      const savedDate = savedSince ? new Date(savedSince) : null;
+      const visibleStart = savedDate && savedDate > todayStart ? savedDate : todayStart;
+      const since = visibleStart.toISOString();
 
       const [{ data: od, error: oe }, { data: td, error: te }] = await Promise.all([
         supabase.from('orders').select('*').gte('timestamp', since).order('timestamp', { ascending: false }),
@@ -208,13 +259,27 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       const mergedTxs = [...dbTxs, ...localOnlyTxs]
         .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-      apply({ orders: mergedOrders, transactions: mergedTxs }, true);
+      const now = new Date();
+      const autoCloseMinute = now.getHours() === 23 && now.getMinutes() === 59;
+      apply(autoCloseMinute ? { orders: [], transactions: [] } : { orders: mergedOrders, transactions: mergedTxs }, true);
       return true;
     } catch (e: any) {
       setDbError(e?.message || 'Error de red');
       return false;
     }
   }, [apply]);
+
+  const fetchMenu = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from('menu_items').select('name,price,category').order('category').order('name');
+      if (!error) {
+        const remote = (data || []).map((item: any) => ({ name: item.name, price: Number(item.price), category: item.category }));
+        const next = [...MENU_ITEMS.filter(base => !remote.some((item: MenuItem) => item.name.toLowerCase() === base.name.toLowerCase())), ...remote];
+        setMenuItems(next);
+        saveMenu(next);
+      }
+    } catch {}
+  }, []);
 
   const writeOrder = useCallback(async (op: QOp) => {
     try {
@@ -269,9 +334,10 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         if (ok) { setConnected(true); break; }
         if (i < 2) await new Promise(r => setTimeout(r, 1500));
       }
+      await fetchMenu();
     };
     boot();
-  }, [fetchAll, apply]);
+  }, [fetchAll, fetchMenu, apply]);
 
   useEffect(() => {
     pollRef.current = setInterval(async () => {
@@ -293,6 +359,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       }
 
       const ok = await fetchAll();
+      await fetchMenu();
       if (ok) {
         setConnected(true);
       } else if (!realtimeConnectedRef.current) {
@@ -300,23 +367,34 @@ export function OrderProvider({ children }: { children: ReactNode }) {
       }
     }, 3000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [fetchAll]);
+  }, [fetchAll, fetchMenu]);
 
-  // Auto-borrar pedidos a las 11:59 PM (transacciones se conservan)
+  // Cierre visual automático a las 11:59 PM. Los registros de Supabase se
+  // conservan intactos para que cualquier día pueda reconstruirse en PDF.
   useEffect(() => {
-    const midnight = setInterval(() => {
+    const closeVisibleDay = () => {
       const now = new Date();
       if (now.getHours() === 23 && now.getMinutes() === 59) {
-        supabase.from('orders').delete().neq('id', '__keep__').then(() => {
-          setOrders([]);
-          ordersRef.current = [];
-          const s = { orders: [], transactions: txRef.current };
-          saveLS(s);
-          bcRef.current?.postMessage({ type: 'STATE', state: s, from: tabId.current });
-        }).catch(() => {});
+        const day = now.toLocaleDateString('en-CA');
+        if (localStorage.getItem(CLOSE_KEY) === day) return;
+        localStorage.setItem(CLOSE_KEY, day);
+        localStorage.setItem(UI_SINCE_KEY, now.toISOString());
+        ordersRef.current = [];
+        txRef.current = [];
+        apply({ orders: [], transactions: [] }, true);
       }
-    }, 30000);
+    };
+    closeVisibleDay();
+    const midnight = setInterval(closeVisibleDay, 15000);
     return () => clearInterval(midnight);
+  }, [apply]);
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === MENU_KEY) setMenuItems(loadMenu());
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   useEffect(() => {
@@ -524,28 +602,55 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   const getNetProfit     = useCallback(() => getTotalSales() + getOtherIncome() - getTotalExpenses(), [getTotalSales, getOtherIncome, getTotalExpenses]);
 
   const buildDailySummary = useCallback((date: string): DailySummary => {
-    const dayTx  = txRef.current.filter(t => t.timestamp.startsWith(date));
-    const dayOrd = ordersRef.current.filter(o => o.timestamp.startsWith(date));
-    const totalSales    = dayTx.filter(t => t.type === 'sale').reduce((s, t) => s + t.amount, 0);
-    const totalExpenses = dayTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-    const otherIncome   = dayTx.filter(t => t.type === 'other-income' || t.type === 'card-close').reduce((s, t) => s + t.amount, 0);
-    const itemMap: Record<string, { qty: number; total: number }> = {};
-    dayOrd.forEach(o => o.items.forEach(i => {
-      if (!itemMap[i.name]) itemMap[i.name] = { qty: 0, total: 0 };
-      itemMap[i.name].qty += i.quantity; itemMap[i.name].total += i.price * i.quantity;
-    }));
-    return {
-      date, totalSales, totalExpenses, otherIncome,
-      netProfit: totalSales + otherIncome - totalExpenses,
-      itemsSold: Object.entries(itemMap).map(([name, v]) => ({ name, ...v })).sort((a, b) => b.total - a.total),
-      transactions: dayTx,
-    };
+    const dayTx = txRef.current.filter(t => new Date(t.timestamp).toLocaleDateString('en-CA') === date);
+    const dayOrd = ordersRef.current.filter(o => new Date(o.timestamp).toLocaleDateString('en-CA') === date);
+    return makeSummary(date, dayTx, dayOrd);
   }, []);
 
+  const getDailySummary = useCallback(async (date: string): Promise<DailySummary> => {
+    const { start, end } = localDayRange(date);
+    try {
+      const [{ data: od, error: oe }, { data: td, error: te }] = await Promise.all([
+        supabase.from('orders').select('*').gte('timestamp', start).lt('timestamp', end).order('timestamp'),
+        supabase.from('transactions').select('*').gte('timestamp', start).lt('timestamp', end).order('timestamp'),
+      ]);
+      if (oe || te) throw oe || te;
+      const dayOrd = (od || []).map(fromDb);
+      const dayTx = (td || []).map((r: any) => ({ ...r, amount: Number(r.amount) })) as Transaction[];
+      return makeSummary(date, dayTx, dayOrd);
+    } catch {
+      return buildDailySummary(date);
+    }
+  }, [buildDailySummary]);
+
   const closeDayAndClean = useCallback(async (date: string) => {
-    const dayOrdIds = ordersRef.current.filter(o => o.timestamp.startsWith(date)).map(o => o.id);
-    if (dayOrdIds.length) { try { await supabase.from('orders').delete().in('id', dayOrdIds); } catch {} }
-    setOrders(prev => { const u = prev.filter(o => !o.timestamp.startsWith(date)); saveLS({ orders: u, transactions: txRef.current }); return u; });
+    if (date === new Date().toLocaleDateString('en-CA')) {
+      localStorage.setItem(UI_SINCE_KEY, new Date().toISOString());
+    }
+    const keepOrders = ordersRef.current.filter(o => new Date(o.timestamp).toLocaleDateString('en-CA') !== date);
+    const keepTx = txRef.current.filter(t => new Date(t.timestamp).toLocaleDateString('en-CA') !== date);
+    ordersRef.current = keepOrders;
+    txRef.current = keepTx;
+    apply({ orders: keepOrders, transactions: keepTx }, true);
+  }, [apply]);
+
+  const addMenuItem = useCallback(async (item: MenuItem) => {
+    const normalized = { ...item, name: item.name.trim(), price: Number(item.price) };
+    setMenuItems(prev => {
+      const next = [...prev.filter(x => x.name.toLowerCase() !== normalized.name.toLowerCase()), normalized];
+      saveMenu(next);
+      return next;
+    });
+    try { await supabase.from('menu_items').upsert([normalized], { onConflict: 'name' }); } catch {}
+  }, []);
+
+  const deleteMenuItem = useCallback(async (name: string) => {
+    setMenuItems(prev => {
+      const next = prev.filter(item => item.name !== name);
+      saveMenu(next);
+      return next;
+    });
+    try { await supabase.from('menu_items').delete().eq('name', name); } catch {}
   }, []);
 
   const testWrite = useCallback(async (): Promise<string> => {
@@ -600,11 +705,12 @@ export function OrderProvider({ children }: { children: ReactNode }) {
 
   return (
     <Ctx.Provider value={{
-      orders, transactions, connected, pendingCount, dbError,
+      orders, transactions, menuItems, connected, pendingCount, dbError,
       addOrder, addItemsToOrder, updateOrderStatus, markItemReady,
       deleteOrder, addTransaction, deleteTransaction,
       getTotalSales, getTotalExpenses, getOtherIncome, getNetProfit,
-      buildDailySummary, closeDayAndClean, cleanOldOrders, reconnect, lastWriteError, testWrite,
+      buildDailySummary, getDailySummary, closeDayAndClean, addMenuItem, deleteMenuItem,
+      cleanOldOrders, reconnect, lastWriteError, testWrite,
     }}>
       {children}
     </Ctx.Provider>

@@ -1,11 +1,11 @@
 import { useOrders, Order } from './OrderContext';
 import { useNavigate } from 'react-router';
 import { ArrowLeft, Clock, CheckCircle, ChefHat, Wifi, WifiOff } from 'lucide-react';
-import { useState, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import logoImg from '../../imports/image-1.png';
 
-const F    = "'Inter',-apple-system,sans-serif";
-const MONO = "'JetBrains Mono',monospace";
+const F    = "'Nunito Sans',-apple-system,sans-serif";
+const MONO = "'DM Mono',monospace";
 const BG   = '#05070A';
 const CARD = '#0C0F15';
 const BORDER = '1px solid rgba(255,255,255,0.07)';
@@ -125,7 +125,10 @@ export default function KitchenDisplay() {
   const navigate = useNavigate();
   const { orders, updateOrderStatus, markItemReady, connected } = useOrders();
   const [now, setNow] = useState(Date.now());
-  useState(()=>{ const id = setInterval(()=>setNow(Date.now()),1000); return ()=>clearInterval(id); });
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const active    = orders.filter(o=>o.status!=='delivered');
   const delivered = orders.filter(o=>o.status==='delivered');

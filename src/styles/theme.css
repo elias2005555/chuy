@@ -114,14 +114,14 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Nunito Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     background-color: #07090D;
     color: #EDF0F4;
   }
   html { font-size: var(--font-size); }
   button { font-weight: 600; -webkit-appearance: none; }
   input, select { font-weight: 400; }
-  .mono { font-family: 'JetBrains Mono', monospace; }
+  .mono { font-family: 'DM Mono', monospace; }
 }
 
 ::-webkit-scrollbar { width: 3px; height: 3px; }

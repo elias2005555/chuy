@@ -1,16 +1,15 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useOrders, OrderItem, Order } from './OrderContext';
-import { MENU_ITEMS, CATEGORIES } from './menuData';
+import { CATEGORIES, MenuItem } from './menuData';
 import { ArrowLeft, ShoppingCart, Trash2, Send, X, Banknote, Plus, CheckCircle, Receipt, Droplets, User, Calculator } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import logoImg from '../../imports/image-1.png';
 
-const F    = "'Inter',-apple-system,sans-serif";
-const MONO = "'JetBrains Mono',monospace";
+const F    = "'Nunito Sans',-apple-system,sans-serif";
+const MONO = "'DM Mono',monospace";
 
 const KITCHEN_CATS = new Set(['Desayunos','Golosinas','Platos Fuertes']);
 const AUTO_CATS    = new Set(['Bebidas','Chucherías','Helados']);
-const DRINKS       = MENU_ITEMS.filter(i => i.category === 'Bebidas');
 
 const AVATARS = [
   // Personas graciosas / look
@@ -116,8 +115,9 @@ function CalcModal({ onClose }: { onClose: ()=>void }) {
 }
 
 // ─── Payment Modal ────────────────────────────────────────────────────────────
-function PayModal({ total, items, extras, onConfirm, onCancel, onAddDrink }: {
+function PayModal({ total, items, extras, drinks, onConfirm, onCancel, onAddDrink }: {
   total: number; items: OrderItem[]; extras: OrderItem[];
+  drinks: MenuItem[];
   onConfirm: ()=>void; onCancel: ()=>void;
   onAddDrink: (d:{name:string;price:number;category:string})=>void;
 }) {
@@ -152,7 +152,7 @@ function PayModal({ total, items, extras, onConfirm, onCancel, onAddDrink }: {
           {/* Add drink */}
           <Label>Agregar bebida</Label>
           <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:16 }}>
-            {DRINKS.slice(0,8).map(d=>(
+            {drinks.slice(0,8).map(d=>(
               <button key={d.name} onClick={()=>onAddDrink(d)} style={{ padding:'5px 10px', borderRadius:100, border:'1px solid rgba(59,130,246,0.25)', backgroundColor:'rgba(59,130,246,0.07)', color:'#60A5FA', fontSize:11, fontWeight:600, cursor:'pointer', WebkitAppearance:'none', fontFamily:F }}>
                 +{d.name} <span style={{ fontFamily:MONO }}>L.{d.price}</span>
               </button>
@@ -307,7 +307,7 @@ function CartItem({ item, onRemove, onQty }: { item:OrderItem; onRemove:(id:stri
 // ─── Main POS ─────────────────────────────────────────────────────────────────
 export default function POSTerminal() {
   const navigate = useNavigate();
-  const { addOrder, addItemsToOrder, addTransaction, orders, updateOrderStatus, markItemReady, deleteOrder } = useOrders();
+  const { addOrder, addItemsToOrder, addTransaction, orders, menuItems, updateOrderStatus, markItemReady, deleteOrder } = useOrders();
 
   const [loggedIn,setLoggedIn]       = useState(false);
   const [user,setUser]               = useState('');
@@ -328,7 +328,8 @@ export default function POSTerminal() {
   const [selected,setSelected]       = useState<Set<string>>(new Set());
   const [confirmDel,setConfirmDel]   = useState<'all'|'selected'|null>(null);
 
-  const filtered     = useMemo(()=>MENU_ITEMS.filter(i=>i.category===selectedCat),[selectedCat]);
+  const filtered     = useMemo(()=>menuItems.filter(i=>i.category===selectedCat),[menuItems,selectedCat]);
+  const drinks       = useMemo(()=>menuItems.filter(i=>i.category==='Bebidas'),[menuItems]);
   const activeOrders = orders.filter(o=>o.status!=='delivered');
   const payOrder     = payingId ? orders.find(o=>o.id===payingId) : null;
   const cartTotal    = cart.reduce((s,i)=>s+i.price*i.quantity,0);
@@ -616,7 +617,7 @@ export default function POSTerminal() {
                 <p style={{ fontSize:11,fontWeight:700,color:'#3B82F6',letterSpacing:1.5,textTransform:'uppercase',fontFamily:MONO }}>Bebidas</p>
               </div>
               <div style={{ flex:1,overflowY:'auto',padding:'6px',display:'flex',flexDirection:'column',gap:5 }}>
-                {DRINKS.map((d,i)=>(
+                {drinks.map((d,i)=>(
                   <button key={i} onClick={()=>chargeDrink(d)} style={{ backgroundColor:'rgba(59,130,246,0.05)',border:'1px solid rgba(59,130,246,0.14)',borderRadius:9,padding:'8px 10px',cursor:'pointer',WebkitAppearance:'none',textAlign:'left',display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,overflow:'hidden' }}>
                     <p style={{ fontSize:12,fontWeight:600,color:'#CBD5E1',lineHeight:1.2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1,fontFamily:F }}>{d.name}</p>
                     <p style={{ fontSize:13,fontWeight:800,color:'#60A5FA',fontFamily:MONO,flexShrink:0 }}>L.{d.price}</p>
@@ -726,7 +727,7 @@ export default function POSTerminal() {
       {showCustom&&<CustomModal onAdd={addToCart} onClose={()=>setShowCustom(false)}/>}
       {showCalc&&<CalcModal onClose={()=>setShowCalc(false)}/>}
       {payOrder&&(
-        <PayModal total={payOrder.total} items={payOrder.items} extras={payExtras}
+        <PayModal total={payOrder.total} items={payOrder.items} extras={payExtras} drinks={drinks}
           onConfirm={confirmPayment}
           onCancel={()=>{setPayingId(null);setPayExtras([]);}}
           onAddDrink={addPayDrink}

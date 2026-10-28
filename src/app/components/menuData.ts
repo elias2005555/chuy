@@ -43,6 +43,8 @@ export const MENU_ITEMS: MenuItem[] = [
   { name: 'Chuleta', price: 115, category: 'Platos Fuertes' },
   { name: 'Pollo', price: 115, category: 'Platos Fuertes' },
   { name: 'Mozzarella', price: 120, category: 'Platos Fuertes' },
+  { name: 'Tacos de Birria', price: 150, category: 'Platos Fuertes' },
+  { name: 'Tacos de Pollo Mex', price: 120, category: 'Platos Fuertes' },
 
   // Bebidas
   { name: 'Agua', price: 10, category: 'Bebidas' },

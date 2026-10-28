@@ -1,5 +1,5 @@
 import '../polyfills';
-import { HashRouter, Routes, Route } from 'react-router';
+import { createHashRouter, RouterProvider } from 'react-router';
 import { Component, ReactNode } from 'react';
 import AdminDashboard from './components/AdminDashboard';
 import POSTerminal from './components/POSTerminal';
@@ -26,17 +26,17 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 }
 
 export default function App() {
+  const router = createHashRouter([
+    { path: "/", Component: HomePage },
+    { path: "/admin", Component: AdminDashboard },
+    { path: "/pos", Component: POSTerminal },
+    { path: "/kitchen", Component: KitchenDisplay },
+  ]);
+
   return (
     <ErrorBoundary>
       <OrderProvider>
-        <HashRouter>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/pos" element={<POSTerminal />} />
-            <Route path="/kitchen" element={<KitchenDisplay />} />
-          </Routes>
-        </HashRouter>
+        <RouterProvider router={router} />
       </OrderProvider>
     </ErrorBoundary>
   );

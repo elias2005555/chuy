@@ -12,8 +12,8 @@ const HOME_STYLE = `
 
 import logoImg from '../../imports/image-1.png';
 
-const F = "'Inter', -apple-system, sans-serif";
-const MONO = "'JetBrains Mono', monospace";
+const F = "'Nunito Sans', -apple-system, sans-serif";
+const MONO = "'DM Mono', monospace";
 
 const FIX_SQL = `-- Pegar en Supabase → SQL Editor → Run
 alter table orders disable row level security;
@@ -284,7 +284,7 @@ function NavBtn({ label, sub, icon, accent, badge, onClick }: {
       style={{ backgroundColor:hov?'#111620':'#0E1117', border:`1px solid ${hov?accent+'40':'rgba(255,255,255,0.07)'}`, borderRadius:14, padding:'24px 12px', cursor:'pointer', WebkitAppearance:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:10, transition:'all 0.15s', position:'relative' }}>
       {badge !== undefined && (
         <div style={{ position:'absolute', top:8, right:8, minWidth:20, height:20, borderRadius:100, backgroundColor:'#22C55E', display:'flex', alignItems:'center', justifyContent:'center', padding:'0 5px' }}>
-          <span style={{ color:'#FFF', fontSize:10, fontWeight:800, fontFamily:"'JetBrains Mono',monospace" }}>{badge}</span>
+          <span style={{ color:'#FFF', fontSize:10, fontWeight:800, fontFamily:"'DM Mono',monospace" }}>{badge}</span>
         </div>
       )}
       <div style={{ width:48, height:48, borderRadius:13, backgroundColor:`${accent}15`, border:`1px solid ${accent}30`, display:'flex', alignItems:'center', justifyContent:'center' }}>
